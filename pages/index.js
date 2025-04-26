@@ -1,89 +1,101 @@
-import { useState } from 'react';
+"use client";
+import { useState } from "react";
 
 export default function Home() {
-  const [ingredients, setIngredients] = useState('');
+  const [ingredients, setIngredients] = useState("");
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const handleSearch = async () => {
+  const searchRecipes = async () => {
     setLoading(true);
     setRecipes([]);
     try {
-      const response = await fetch('https://your-backend-railway-domain.up.railway.app/search', {
+      const response = await fetch('https://YOUR-BACKEND-NAME.up.railway.app/search', {  // <-- Put your backend URL here
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ingredients: ingredients.split(',').map(ing => ing.trim())
-        })
+        body: JSON.stringify({ ingredients: ingredients.split(',').map(i => i.trim()) }),
       });
+
       const data = await response.json();
-      setRecipes(data.recipes);
+      setRecipes(data.recipes || []);
     } catch (error) {
-      console.error('Error fetching recipes:', error);
+      console.error("Error searching recipes:", error);
     }
     setLoading(false);
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '2rem' }}>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', fontFamily: 'Poppins, sans-serif' }}>Recipe Search</h1>
-      <p style={{ marginBottom: '1.5rem', color: '#555' }}>Enter the ingredients you have (comma-separated):</p>
-      <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+    <main style={{
+      padding: "2rem",
+      textAlign: "center",
+      fontFamily: "Poppins, sans-serif",
+      backgroundColor: "#f0f8f7",
+      minHeight: "100vh"
+    }}>
+      <h1 style={{ fontSize: "2rem", marginBottom: "1rem", color: "#333" }}>🍋 What ingredients do you have?</h1>
+
+      <div style={{ marginBottom: "1rem" }}>
         <input
           type="text"
           value={ingredients}
           onChange={(e) => setIngredients(e.target.value)}
+          placeholder="Enter ingredients (e.g. chicken, rice, lemon)"
           style={{
-            width: '300px',
-            padding: '0.75rem',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            fontSize: '1rem'
+            padding: "0.8rem",
+            borderRadius: "12px",
+            border: "1px solid #ccc",
+            width: "320px",
+            fontSize: "1rem",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.1)"
           }}
-          placeholder="e.g., chicken, rice, broccoli"
         />
         <button
-          onClick={handleSearch}
+          onClick={searchRecipes}
           style={{
-            backgroundColor: '#2563eb',
-            color: 'white',
-            border: 'none',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '1rem'
+            marginLeft: "10px",
+            padding: "0.8rem 1.5rem",
+            backgroundColor: "#86C232",
+            color: "white",
+            border: "none",
+            borderRadius: "12px",
+            cursor: "pointer",
+            fontSize: "1rem",
+            boxShadow: "0 3px 10px rgba(0,0,0,0.1)"
           }}
         >
           Search
         </button>
       </div>
 
-      {loading && <p>Loading recipes...</p>}
+      {loading && <p style={{ fontSize: "1rem", color: "#888" }}>Searching recipes... 🔍</p>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', width: '100%', maxWidth: '1000px' }}>
-        {recipes.length > 0 && recipes.map((recipe, index) => (
-          <div key={index} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#111' }}>{recipe.title}</h2>
-            <ul style={{ listStyle: 'disc', paddingLeft: '1.5rem', color: '#555' }}>
-              {recipe.ingredients.map((ing, idx) => (
-                <li key={idx} style={{ marginBottom: '0.5rem' }}>{ing}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div style={{ marginTop: "2rem" }}>
+        {recipes.length > 0 && (
+          <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem", color: "#555" }}>✨ Recipes Found:</h2>
+        )}
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {recipes.map((recipe, index) => (
+            <li key={index} style={{
+              background: "#fff",
+              margin: "0.8rem auto",
+              padding: "1rem",
+              width: "90%",
+              maxWidth: "500px",
+              borderRadius: "12px",
+              boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+            }}>
+              <strong style={{ fontSize: "1.1rem" }}>{recipe.title}</strong>
+              <ul style={{ marginTop: "0.5rem", paddingLeft: "1rem", color: "#666" }}>
+                {recipe.ingredients.map((ing, idx) => (
+                  <li key={idx} style={{ fontSize: "0.9rem" }}>{ing}</li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
       </div>
-    </div>
+    </main>
   );
 }
-
-
-
-cd recipe-search-frontend
-git init
-git add .
-git commit -m "initial commit"
-git branch -M main
-git remote add origin https://github.com/nivramati/recipe-search-frontend.git
-git push -u origin main
