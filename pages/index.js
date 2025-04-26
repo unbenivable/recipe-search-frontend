@@ -9,7 +9,7 @@ export default function Home() {
     setLoading(true);
     setRecipes([]);
     try {
-      const response = await fetch('http://127.0.0.1:8001/search', {
+      const response = await fetch('https://your-backend-railway-domain.up.railway.app/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -77,3 +77,13 @@ export default function Home() {
     </div>
   );
 }
+
+
+
+cd recipe-search-frontend
+git init
+git add .
+git commit -m "initial commit"
+git branch -M main
+git remote add origin https://github.com/nivramati/recipe-search-frontend.git
+git push -u origin main
