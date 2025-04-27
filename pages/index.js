@@ -42,7 +42,14 @@ export default function Home() {
 }
 
 function RecipeCard({ recipe }) {
-  const [showDirections, setShowDirections] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const maxLength = 200; // characters before "See more..." appears
+
+  const shortDirections = recipe.directions?.length > maxLength
+    ? recipe.directions.slice(0, maxLength) + "..."
+    : recipe.directions;
+
+  const shouldShowSeeMore = recipe.directions?.length > maxLength;
 
   return (
     <div style={cardStyle}>
@@ -55,15 +62,16 @@ function RecipeCard({ recipe }) {
         ))}
       </ul>
 
-      <button onClick={() => setShowDirections(!showDirections)} style={buttonSmallStyle}>
-        {showDirections ? "Hide Directions" : "View Directions"}
-      </button>
+      <h3>Directions:</h3>
+      <p>{expanded ? recipe.directions : shortDirections}</p>
 
-      {showDirections && (
-        <div style={{ marginTop: "10px" }}>
-          <h3>Directions:</h3>
-          <p>{recipe.directions}</p>
-        </div>
+      {shouldShowSeeMore && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={buttonSmallStyle}
+        >
+          {expanded ? "Show Less" : "See More"}
+        </button>
       )}
     </div>
   );
