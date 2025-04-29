@@ -1,143 +1,92 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from 'react';
 
 export default function Home() {
-  const [ingredientsInput, setIngredientsInput] = useState("");
+  const [ingredients, setIngredients] = useState('');
   const [recipes, setRecipes] = useState([]);
+  const [expanded, setExpanded] = useState({});
 
   const handleSearch = async () => {
-    try {
-      const ingredientsArray = ingredientsInput.split(",").map(ing => ing.trim());
-      const response = await axios.post("https://web-production-9df5.up.railway.app/search", {
-        ingredients: ingredientsArray,
-      });
-      setRecipes(response.data.recipes);
-    } catch (error) {
-      console.error("Error searching recipes:", error);
-    }
+    const response = await fetch('/api/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ingredients: ingredients.split(',').map(i => i.trim()) }),
+    });
+    const data = await response.json();
+    setRecipes(data.recipes || []);
+  };
+
+  const toggleExpand = (index) => {
+    setExpanded(prev => ({ ...prev, [index]: !prev[index] }));
   };
 
   return (
-    <div style={pageStyle}>
-      <h1>Recipe Finder</h1>
-      <p>Enter ingredients you already have, separated by commas</p>
-      <div style={searchContainerStyle}>
+    <div style={{ background: '#111', color: '#fff', minHeight: '100vh', padding: '2rem' }}>
+      <h1 style={{ fontSize: '2.5rem', textAlign: 'center' }}>Recipe Finder</h1>
+      <p style={{ textAlign: 'center', marginBottom: '1rem' }}>
+        Enter ingredients you already have, separated by commas
+      </p>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
         <input
           type="text"
-          value={ingredientsInput}
-          onChange={(e) => setIngredientsInput(e.target.value)}
-          placeholder="e.g., chicken, rice, broccoli"
-          style={inputStyle}
+          placeholder="e.g. chicken, rice"
+          value={ingredients}
+          onChange={(e) => setIngredients(e.target.value)}
+          style={{ padding: '0.5rem', width: '300px', borderRadius: '5px', border: 'none' }}
         />
-        <button onClick={handleSearch} style={buttonStyle}>Find Recipes</button>
-      </div>
-
-      <div style={recipeGridStyle}>
-        {recipes.map((recipe, index) => (
-          <RecipeCard key={index} recipe={recipe} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function RecipeCard({ recipe }) {
-  const [expanded, setExpanded] = useState(false);
-  const maxLength = 200; // characters before "See more..." appears
-
-  const shortDirections = recipe.directions?.length > maxLength
-    ? recipe.directions.slice(0, maxLength) + "..."
-    : recipe.directions;
-
-  const shouldShowSeeMore = recipe.directions?.length > maxLength;
-
-  return (
-    <div style={cardStyle}>
-      <h2>{recipe.title}</h2>
-
-      <h3>Ingredients:</h3>
-      <ul>
-        {recipe.ingredients.map((ingredient, idx) => (
-          <li key={idx}>{ingredient}</li>
-        ))}
-      </ul>
-
-      <h3>Directions:</h3>
-      <p>{expanded ? recipe.directions : shortDirections}</p>
-
-      {shouldShowSeeMore && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          style={buttonSmallStyle}
-        >
-          {expanded ? "Show Less" : "See More"}
+        <button onClick={handleSearch} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>
+          Find Recipes
         </button>
-      )}
+      </div>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '1rem',
+      }}>
+        {recipes.map((recipe, index) => (
+          <div key={index} style={{
+            background: '#fff',
+            color: '#000',
+            padding: '1rem',
+            borderRadius: '10px',
+            boxShadow: '0 0 10px rgba(0,0,0,0.2)',
+          }}>
+            <h2>{recipe.title}</h2>
+            <h3>Ingredients:</h3>
+            <ul>
+              {recipe.ingredients.map((ing, i) => (
+                <li key={i}>{ing}</li>
+              ))}
+            </ul>
+
+            {recipe.directions && (
+              <>
+                <h3>Directions:</h3>
+                <p>
+                  {expanded[index]
+                    ? recipe.directions
+                    : recipe.directions.slice(0, 300) + (recipe.directions.length > 300 ? '...' : '')}
+                </p>
+                {recipe.directions.length > 300 && (
+                  <button
+                    onClick={() => toggleExpand(index)}
+                    style={{
+                      marginTop: '0.5rem',
+                      background: 'none',
+                      border: '1px solid #000',
+                      borderRadius: '5px',
+                      padding: '0.3rem 0.5rem',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {expanded[index] ? 'See Less' : 'See More'}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-const pageStyle = {
-  minHeight: "100vh",
-  backgroundColor: "#111",
-  color: "#fff",
-  padding: "20px",
-  fontFamily: "sans-serif",
-  textAlign: "center",
-};
-
-const searchContainerStyle = {
-  display: "flex",
-  justifyContent: "center",
-  gap: "10px",
-  marginTop: "20px",
-  marginBottom: "30px",
-};
-
-const inputStyle = {
-  padding: "12px",
-  fontSize: "16px",
-  width: "300px",
-  borderRadius: "8px",
-  border: "none",
-  outline: "none",
-};
-
-const buttonStyle = {
-  padding: "12px 20px",
-  backgroundColor: "white",
-  color: "black",
-  fontWeight: "bold",
-  borderRadius: "8px",
-  border: "none",
-  cursor: "pointer",
-};
-
-const buttonSmallStyle = {
-  marginTop: "10px",
-  padding: "8px 14px",
-  backgroundColor: "white",
-  color: "black",
-  border: "none",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontSize: "14px",
-};
-
-const recipeGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-  gap: "20px",
-  padding: "20px",
-};
-
-const cardStyle = {
-  backgroundColor: "#fff",
-  color: "#000",
-  padding: "20px",
-  borderRadius: "10px",
-  boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-  textAlign: "left",
-};
-//test
-
