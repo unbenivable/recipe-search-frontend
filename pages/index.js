@@ -8,21 +8,23 @@ export default function Home() {
 
   const fetchRecipes = async () => {
     try {
-      const response = await axios.post("https://web-production-9df5.up.railway.app/search", {
-        ingredients: ingredients.split(",").map((i) => i.trim().toLowerCase()),
-      });
-      setRecipes(response.data.recipes);
-      setExpanded(null);
-    } catch (err) {
-      console.error("Error fetching recipes:", err);
-      alert("Something went wrong.");
+      const response = await axios.post(
+        "https://web-production-9df5.up.railway.app/search",
+        { ingredients: ingredients.split(",").map((i) => i.trim()) }
+      );
+      setRecipes(response.data.recipes || []);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
     }
   };
 
   return (
-    <div style={{ background: "#fff", color: "#000", padding: "2rem", fontFamily: "Arial" }}>
+    <div style={{ background: "#fff", color: "#000", padding: "2rem", fontFamily: "Arial, sans-serif" }}>
       <h1 style={{ textAlign: "center" }}>Recipe Finder</h1>
-      <p style={{ textAlign: "center" }}>Enter ingredients you already have, separated by commas</p>
+      <p style={{ textAlign: "center" }}>
+        Enter ingredients you already have, separated by commas
+      </p>
+
       <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginBottom: "2rem" }}>
         <input
           type="text"
@@ -36,24 +38,35 @@ export default function Home() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
         {recipes.map((recipe, index) => (
-          <div
-            key={index}
-            style={{
-              background: "#f9f9f9",
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              padding: "1rem",
-              width: "300px",
-            }}
-          >
-            <h2>{recipe.title}</h2>
-            <h4>Ingredients:</h4>
+          <div key={index} style={{
+            border: "1px solid #ccc",
+            padding: "1rem",
+            borderRadius: "8px",
+            width: "300px",
+            boxShadow: "0 0 5px rgba(0,0,0,0.1)"
+          }}>
+            <h3>{recipe.title}</h3>
             <ul>
-              {recipe.ingredients.map((ing, i) => (
+              {recipe.ingredients && recipe.ingredients.map((ing, i) => (
                 <li key={i}>{ing}</li>
               ))}
             </ul>
-
             {recipe.directions && (
               <div>
-                {
+                {expanded === index ? (
+                  <div>
+                    <h4>Directions:</h4>
+                    <p>{recipe.directions}</p>
+                    <button onClick={() => setExpanded(null)}>Show Less</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setExpanded(index)}>See More</button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
