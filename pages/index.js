@@ -1,71 +1,71 @@
 import { useState } from "react";
-import axios from "axios";
 
 export default function Home() {
   const [ingredients, setIngredients] = useState("");
   const [recipes, setRecipes] = useState([]);
-  const [expanded, setExpanded] = useState(null);
 
   const fetchRecipes = async () => {
+    const inputList = ingredients
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter((item) => item.length > 0);
+
+    if (inputList.length === 0) return;
+
     try {
-      const response = await axios.post(
-        "https://web-production-9df5.up.railway.app/search",
-        { ingredients: ingredients.split(",").map((i) => i.trim()) }
-      );
-      setRecipes(response.data.recipes || []);
-    } catch (error) {
-      console.error("Error fetching recipes:", error);
+      const response = await fetch("https://web-production-9df5.up.railway.app/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ingredients: inputList }),
+      });
+
+      const data = await response.json();
+      setRecipes(data.recipes || []);
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setRecipes([]);
     }
   };
 
   return (
-    <div style={{ background: "#fff", color: "#000", padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1 style={{ textAlign: "center" }}>Recipe Finder</h1>
-      <p style={{ textAlign: "center" }}>
-        Enter ingredients you already have, separated by commas
-      </p>
-
-      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", marginBottom: "2rem" }}>
+    <div style={{ padding: "2rem", fontFamily: "Arial", backgroundColor: "#111", color: "#fff", minHeight: "100vh" }}>
+      <h1 style={{ textAlign: "center", color: "#fff" }}>Recipe Finder</h1>
+      <p style={{ textAlign: "center" }}>Enter ingredients you already have, separated by commas</p>
+      <div style={{ display: "flex", justifyContent: "center", gap: "1rem", margin: "1rem" }}>
         <input
           type="text"
           value={ingredients}
           onChange={(e) => setIngredients(e.target.value)}
-          placeholder="e.g. rice, chicken"
-          style={{ padding: "0.5rem", width: "300px" }}
+          placeholder="e.g. egg, chicken"
+          style={{ padding: "0.5rem", width: "300px", backgroundColor: "#333", color: "#fff", border: "1px solid #555" }}
         />
-        <button onClick={fetchRecipes} style={{ padding: "0.5rem 1rem" }}>Find Recipes</button>
+        <button onClick={fetchRecipes} style={{ padding: "0.5rem 1rem", backgroundColor: "#666", color: "#fff", border: "none" }}>
+          Find Recipes
+        </button>
       </div>
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-        {recipes.map((recipe, index) => (
-          <div key={index} style={{
-            border: "1px solid #ccc",
-            padding: "1rem",
-            borderRadius: "8px",
-            width: "300px",
-            boxShadow: "0 0 5px rgba(0,0,0,0.1)"
-          }}>
-            <h3>{recipe.title}</h3>
-            <ul>
-              {recipe.ingredients && recipe.ingredients.map((ing, i) => (
-                <li key={i}>{ing}</li>
-              ))}
-            </ul>
-            {recipe.directions && (
-              <div>
-                {expanded === index ? (
-                  <div>
-                    <h4>Directions:</h4>
-                    <p>{recipe.directions}</p>
-                    <button onClick={() => setExpanded(null)}>Show Less</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setExpanded(index)}>See More</button>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem", marginTop: "2rem" }}>
+        {recipes.length === 0 ? (
+          <p>No recipes found.</p>
+        ) : (
+          recipes.map((recipe, index) => (
+            <div key={index} style={{ backgroundColor: "#222", padding: "1rem", borderRadius: "8px", width: "300px" }}>
+              <h3>{recipe.title}</h3>
+              <p><strong>Ingredients:</strong></p>
+              <ul>
+                {recipe.ingredients.map((ing, i) => (
+                  <li key={i}>{ing}</li>
+                ))}
+              </ul>
+              {recipe.directions && (
+                <>
+                  <p><strong>Directions:</strong></p>
+                  <p style={{ whiteSpace: "pre-wrap" }}>{recipe.directions}</p>
+                </>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
