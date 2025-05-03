@@ -768,7 +768,13 @@ export default function Home() {
           )}
           <form onSubmit={handleDetectSubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%', maxWidth: '400px' }}>
-              <div style={{ display: 'flex', width: '100%', justifyContent: 'center', gap: '12px' }}>
+              <div style={{ 
+                display: 'flex', 
+                width: '100%', 
+                justifyContent: 'center', 
+                gap: '12px',
+                flexDirection: 'row'
+              }}>
                 <label 
                   htmlFor="uploadImage"
                   style={{ 
@@ -781,7 +787,8 @@ export default function Home() {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    flex: 1,
+                    flex: isMobile ? 1 : "unset",
+                    width: isMobile ? "auto" : "200px",
                     fontSize: "16px",
                     fontWeight: "500",
                     boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
@@ -789,7 +796,7 @@ export default function Home() {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#0071e3"/>
+                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#0071e3"/>
                   </svg>
                   <span>Select Image</span>
                   <input 
@@ -800,39 +807,41 @@ export default function Home() {
                     style={{ display: 'none' }}
                   />
                 </label>
-                <label 
-                  htmlFor="cameraInput"
-                  style={{ 
-                    padding: "0.85rem 1rem",
-                    backgroundColor: "white",
-                    color: "#34c759",
-                    border: "none",
-                    borderRadius: "12px",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flex: 1,
-                    fontSize: "16px",
-                    fontWeight: "500",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-                    transition: "background-color 0.2s ease"
-                  }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 15c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3z" fill="#34c759"/>
-                    <path d="M20 4h-3.17l-1.24-1.35c-.37-.41-.91-.65-1.47-.65H9.88c-.56 0-1.1.24-1.48.65L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#34c759"/>
-                  </svg>
-                  <span>Open Camera</span>
-                  <input 
-                    type="file" 
-                    id="cameraInput"
-                    accept="image/*" 
-                    capture="environment"
-                    onChange={handleDetectImageChange}
-                    style={{ display: 'none' }}
-                  />
-                </label>
+                {isMobile && (
+                  <label 
+                    htmlFor="cameraInput"
+                    style={{ 
+                      padding: "0.85rem 1rem",
+                      backgroundColor: "white",
+                      color: "#34c759",
+                      border: "none",
+                      borderRadius: "12px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flex: 1,
+                      fontSize: "16px",
+                      fontWeight: "500",
+                      boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                      transition: "background-color 0.2s ease"
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 15c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3z" fill="#34c759"/>
+                      <path d="M20 4h-3.17l-1.24-1.35c-.37-.41-.91-.65-1.47-.65H9.88c-.56 0-1.1.24-1.48.65L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#34c759"/>
+                    </svg>
+                    <span>Open Camera</span>
+                    <input 
+                      type="file" 
+                      id="cameraInput"
+                      accept="image/*" 
+                      capture="environment"
+                      onChange={handleDetectImageChange}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
               </div>
               {detectImage && (
                 <div style={{ marginTop: '10px', textAlign: 'center' }}>
