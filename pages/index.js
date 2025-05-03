@@ -619,17 +619,28 @@ export default function Home() {
         </div>
       ) : (
         <>
-          <p style={{ textAlign: "center" }}>
+          <p style={{ 
+            textAlign: "center", 
+            fontSize: "16px", 
+            color: "#636366",
+            marginBottom: "1.5rem" 
+          }}>
             Upload a food image to detect ingredients and find recipes.
-            {Object.values(dietaryFilters).some(v => v) && (
-              <span style={{ display: "block", marginTop: "0.5rem", fontWeight: "500", color: "#34c759" }}>
-                Active filters: {Object.entries(dietaryFilters)
-                  .filter(([_, isActive]) => isActive)
-                  .map(([filter]) => filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))
-                  .join(', ')}
-              </span>
-            )}
           </p>
+          {Object.values(dietaryFilters).some(v => v) && (
+            <p style={{ 
+              textAlign: "center", 
+              marginTop: "0.5rem", 
+              marginBottom: "1rem",
+              fontWeight: "500", 
+              color: "#34c759" 
+            }}>
+              Active filters: {Object.entries(dietaryFilters)
+                .filter(([_, isActive]) => isActive)
+                .map(([filter]) => filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()))
+                .join(', ')}
+            </p>
+          )}
           <form onSubmit={handleDetectSubmit} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', width: '100%', maxWidth: '400px' }}>
               <div style={{ display: 'flex', width: '100%', justifyContent: 'center', gap: '12px' }}>
