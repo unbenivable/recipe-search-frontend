@@ -76,31 +76,74 @@ export default function Home() {
     const lowerRecipeIng = recipeIngredient.toLowerCase();
     const lowerSearchIng = searchIngredient.toLowerCase();
     
+    // Basic contains check (this is a fallback)
+    const simpleContains = lowerRecipeIng.includes(lowerSearchIng);
+    
     // Split the recipe ingredient into words
     const words = lowerRecipeIng.split(/\s+|,|;|\(|\)|\/|-/);
     
+    // Debugging logs
+    console.log(`Checking if '${lowerSearchIng}' matches with '${lowerRecipeIng}'`);
+    console.log(`Words extracted: ${JSON.stringify(words)}`);
+    
+    // Properly escape the search ingredient for regex
+    const escapeRegExp = (string) => {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+    
+    const escapedSearchIng = escapeRegExp(lowerSearchIng);
+    
     // Check if the search ingredient is a complete word in the recipe ingredient
-    // This prevents "rice" from matching "rice vinegar"
-    return words.includes(lowerSearchIng) ||
-           // Also check if the search ingredient is at the beginning followed by a non-word character
-           lowerRecipeIng.match(new RegExp(`^${lowerSearchIng}\\b`)) ||
-           // Or at the end preceded by a non-word character
-           lowerRecipeIng.match(new RegExp(`\\b${lowerSearchIng}$`));
+    const isExactMatch = words.includes(lowerSearchIng);
+    
+    // Create properly escaped regex patterns
+    const startPattern = new RegExp(`^${escapedSearchIng}\\b`);
+    const endPattern = new RegExp(`\\b${escapedSearchIng}$`);
+    
+    const isStartMatch = startPattern.test(lowerRecipeIng);
+    const isEndMatch = endPattern.test(lowerRecipeIng);
+    
+    // Also check if ingredient is contained as a whole word
+    const wholeWordPattern = new RegExp(`\\b${escapedSearchIng}\\b`);
+    const isWholeWordMatch = wholeWordPattern.test(lowerRecipeIng);
+    
+    // Use simpleContains as a fallback for basic ingredients (single word ingredients)
+    const isSimpleIngredient = !lowerSearchIng.includes(' ') && lowerSearchIng.length >= 3;
+    const useSimpleMatch = isSimpleIngredient && simpleContains;
+    
+    const hasMatch = isExactMatch || isStartMatch || isEndMatch || isWholeWordMatch || useSimpleMatch;
+    console.log(`Match result: ${hasMatch} (exact: ${isExactMatch}, start: ${isStartMatch}, end: ${isEndMatch}, whole: ${isWholeWordMatch}, simple: ${useSimpleMatch})`);
+    
+    return hasMatch;
   };
 
   // Apply client-side filtering for precise ingredient matching
   const filterRecipesByIngredients = (recipes, ingredients) => {
-    if (!recipes || !ingredients || ingredients.length === 0) return recipes;
+    if (!recipes || !ingredients || ingredients.length === 0) {
+      console.log("No recipes or ingredients to filter");
+      return recipes;
+    }
     
-    return recipes.filter(recipe => {
+    console.log(`Filtering ${recipes.length} recipes with ingredients: ${JSON.stringify(ingredients)}`);
+    
+    const filteredRecipes = recipes.filter(recipe => {
       // Check if all search ingredients are present in the recipe
-      return ingredients.every(searchIngredient => {
+      const allIngredientsMatch = ingredients.every(searchIngredient => {
         // Consider a match if any recipe ingredient matches the search ingredient
-        return recipe.ingredients.some(recipeIngredient => 
+        const hasMatch = recipe.ingredients.some(recipeIngredient => 
           ingredientMatches(recipeIngredient, searchIngredient)
         );
+        
+        console.log(`Ingredient '${searchIngredient}' ${hasMatch ? 'found' : 'NOT found'} in recipe: ${recipe.title}`);
+        return hasMatch;
       });
+      
+      console.log(`Recipe '${recipe.title}' ${allIngredientsMatch ? 'MATCHES' : 'does NOT match'} all search criteria`);
+      return allIngredientsMatch;
     });
+    
+    console.log(`Filtered from ${recipes.length} to ${filteredRecipes.length} recipes`);
+    return filteredRecipes;
   };
 
   // Filter recipes based on dietary restrictions
@@ -166,6 +209,36 @@ export default function Home() {
   // Log the backend URL for debugging
   console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
 
+  // Helper function to rank recipes by how many ingredients they match
+  const rankRecipesByIngredientMatches = (recipes, searchIngredients) => {
+    // Calculate the match score for each recipe
+    return recipes.map(recipe => {
+      let matchCount = 0;
+      const matchDetails = [];
+      
+      // Check each search ingredient against recipe ingredients
+      searchIngredients.forEach(searchIng => {
+        const found = recipe.ingredients.some(recipeIng => 
+          ingredientMatches(recipeIng, searchIng)
+        );
+        if (found) {
+          matchCount++;
+          matchDetails.push(searchIng);
+        }
+      });
+      
+      // Return recipe with match score
+      return {
+        ...recipe,
+        matchScore: matchCount,
+        matchDetails: matchDetails,
+        matchPercentage: (matchCount / searchIngredients.length) * 100
+      };
+    })
+    // Sort by match score (highest first)
+    .sort((a, b) => b.matchScore - a.matchScore);
+  };
+
   const fetchRecipes = async () => {
     setLoading(true);
     setErrorMessage('');
@@ -187,9 +260,9 @@ export default function Home() {
       // Convert all ingredients to lowercase for consistent matching
       ingredientsArray = ingredientsArray.map(ing => ing.toLowerCase());
       
-      // Enforce minimum of 3 ingredients
-      if (ingredientsArray.length < 3) {
-        setErrorMessage('Please enter at least 3 ingredients for better results');
+      // Allow searching with fewer ingredients
+      if (ingredientsArray.length === 0) {
+        setErrorMessage('Please enter at least one ingredient');
         setLoading(false);
         return;
       }
@@ -202,20 +275,33 @@ export default function Home() {
         .filter(([_, isActive]) => isActive)
         .map(([filter]) => filter);
       
+      // Use flexible matching for more results
+      const useStrictMatching = false;
+      
+      console.log('API request payload:', { 
+        ingredients: ingredientsArray,
+        dietary: activeFilters.length > 0 ? activeFilters : undefined,
+        matchAll: useStrictMatching
+      });
+      
       const response = await axios.post(
         process.env.NEXT_PUBLIC_BACKEND_URL,
         { 
           ingredients: ingredientsArray,
           dietary: activeFilters.length > 0 ? activeFilters : undefined,
-          matchAll: true // Ensure all ingredients must be present in results
+          matchAll: useStrictMatching // Set to false for more flexible matching
         }
       );
       
-      console.log('Search response:', response.data);
+      console.log('Search response data:', response.data);
+      console.log('Recipes from API:', response.data.recipes ? response.data.recipes.length : 0);
+      console.log('First 2 recipes sample:', response.data.recipes?.slice(0, 2));
       let recipesData = response.data.recipes || [];
       
-      // Apply client-side filtering for precise ingredient matching
-      recipesData = filterRecipesByIngredients(recipesData, ingredientsArray);
+      // Sort recipes by relevance (how many ingredients they match)
+      console.log('Before ranking - recipe count:', recipesData.length);
+      recipesData = rankRecipesByIngredientMatches(recipesData, ingredientsArray);
+      console.log('After ranking - recipe count:', recipesData.length);
       
       setRecipes(recipesData);
       
@@ -224,7 +310,7 @@ export default function Home() {
         const filterMessage = activeFilters.length > 0 
           ? ` matching your dietary preferences (${activeFilters.join(', ')})`
           : '';
-        setErrorMessage(`No recipes found with all these ingredients${filterMessage}. Try different ingredients or filters.`);
+        setErrorMessage(`No recipes found with these ingredients${filterMessage}. Try different ingredients or filters.`);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
@@ -597,7 +683,7 @@ export default function Home() {
             color: "#636366",
             marginBottom: "1.5rem"
           }}>
-            Enter at least 3 ingredients separated by commas or spaces (e.g. chicken rice garlic)
+            Enter ingredients separated by commas or spaces (e.g. chicken rice garlic)
             {Object.values(dietaryFilters).some(v => v) && (
               <span style={{ display: "block", marginTop: "0.5rem", fontWeight: "500", color: "#34c759" }}>
                 Active filters: {Object.entries(dietaryFilters)
@@ -888,12 +974,41 @@ export default function Home() {
                   fontSize: "18px", 
                   fontWeight: "600", 
                   marginTop: 0,
-                  marginBottom: "1rem",
+                  marginBottom: "0.5rem",
                   color: "#1d1d1f",
                   paddingRight: "70px"
                 }}>
                   {recipe.title}
                 </h3>
+                
+                {recipe.matchScore && (
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: "0.75rem",
+                    fontSize: "13px"
+                  }}>
+                    <div style={{
+                      width: "100%",
+                      height: "6px",
+                      backgroundColor: "#f2f2f7",
+                      borderRadius: "3px",
+                      overflow: "hidden",
+                      marginRight: "8px"
+                    }}>
+                      <div style={{
+                        height: "100%",
+                        width: `${recipe.matchPercentage}%`,
+                        backgroundColor: recipe.matchPercentage > 80 ? "#34c759" : 
+                                         recipe.matchPercentage > 50 ? "#ffcc00" : "#ff9500",
+                        borderRadius: "3px"
+                      }}/>
+                    </div>
+                    <span style={{ color: "#8e8e93", whiteSpace: "nowrap" }}>
+                      {recipe.matchScore} out of {recipe.matchDetails ? recipe.matchDetails.length : 0} ingredients
+                    </span>
+                  </div>
+                )}
                 
                 <h4 style={{ 
                   fontSize: "15px", 
