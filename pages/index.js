@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function Home() {
@@ -16,6 +16,7 @@ export default function Home() {
   const [detectImage, setDetectImage] = useState(null);
   const [detectRecipes, setDetectRecipes] = useState([]);
   const [detectError, setDetectError] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
   const [dietaryFilters, setDietaryFilters] = useState({
     vegetarian: false,
     vegan: false,
@@ -23,6 +24,18 @@ export default function Home() {
     dairyFree: false,
     lowCarb: false
   });
+
+  // Detect if mobile on client side
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768);
+    
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Log the backend URL for debugging
   console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
@@ -230,24 +243,34 @@ export default function Home() {
         textAlign: "center", 
         fontSize: "32px", 
         fontWeight: "600", 
-        marginBottom: "2rem", 
+        marginBottom: "0.5rem", 
         color: "#1d1d1f"
       }}>Recipe Finder</h1>
+      <h2 style={{ 
+        textAlign: "center", 
+        fontSize: "18px", 
+        fontWeight: "500", 
+        marginBottom: "2rem", 
+        color: "#0071e3",
+        fontStyle: "italic"
+      }}>ingreddit.com</h2>
 
       <div style={{ 
         display: "flex", 
+        flexDirection: isMobile ? "column" : "row",
         justifyContent: "center", 
         marginBottom: "2rem",
         background: "#e8e8ed",
         padding: "4px",
         borderRadius: "12px",
         maxWidth: "600px",
-        margin: "0 auto 2rem auto"
+        margin: "0 auto 2rem auto",
+        gap: "4px"
       }}>
         <button 
           onClick={() => setSearchMode('recipe')}
           style={{ 
-            padding: "0.75rem 1.25rem", 
+            padding: "0.75rem 1rem", 
             backgroundColor: searchMode === 'recipe' ? "#ffffff" : "transparent",
             color: searchMode === 'recipe' ? "#1d1d1f" : "#1d1d1f",
             border: "none",
@@ -264,7 +287,7 @@ export default function Home() {
         <button 
           onClick={() => setSearchMode('image')}
           style={{ 
-            padding: "0.75rem 1.25rem", 
+            padding: "0.75rem 1rem", 
             backgroundColor: searchMode === 'image' ? "#ffffff" : "transparent",
             color: searchMode === 'image' ? "#1d1d1f" : "#1d1d1f",
             border: "none",
@@ -281,7 +304,7 @@ export default function Home() {
         <button 
           onClick={() => setSearchMode('detect')}
           style={{ 
-            padding: "0.75rem 1.25rem", 
+            padding: "0.75rem 1rem", 
             backgroundColor: searchMode === 'detect' ? "#ffffff" : "transparent",
             color: searchMode === 'detect' ? "#1d1d1f" : "#1d1d1f",
             border: "none",
@@ -293,7 +316,7 @@ export default function Home() {
             transition: "all 0.2s ease"
           }}
         >
-          Detect Ingredients from Image
+          {isMobile ? "Detect Ingredients" : "Detect Ingredients from Image"}
         </button>
       </div>
 
@@ -361,6 +384,7 @@ export default function Home() {
                   border: "none",
                   fontSize: "16px",
                   backgroundColor: "white",
+                  color: "#1d1d1f",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   outline: "none",
                   transition: "all 0.2s ease"
@@ -509,8 +533,15 @@ export default function Home() {
                   padding: "1.5rem", 
                   width: "100%", 
                   maxWidth: "350px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  cursor: "pointer",
+                  ":hover": {
+                    transform: "translateY(-5px)",
+                    boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
+                  }
                 }}
+                className="recipe-card"
               >
                 <h3 style={{ 
                   fontSize: "18px", 
@@ -632,6 +663,7 @@ export default function Home() {
                   border: "none",
                   fontSize: "16px",
                   backgroundColor: "white",
+                  color: "#1d1d1f",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   outline: "none",
                   transition: "all 0.2s ease"
@@ -1018,6 +1050,16 @@ export default function Home() {
           )}
         </>
       )}
+      <footer style={{
+        marginTop: "3rem",
+        padding: "1.5rem",
+        textAlign: "center",
+        borderTop: "1px solid var(--card-border)",
+        color: "#8e8e93",
+        fontSize: "14px"
+      }}>
+        <p>Niv & Gal © 2025</p>
+      </footer>
     </div>
   );
 }
