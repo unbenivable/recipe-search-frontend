@@ -10,6 +10,7 @@ export default function Home() {
     setLoading(true);
     setError("");
     setRecipes([]);
+
     try {
       const response = await fetch("https://web-production-9df5.up.railway.app/search", {
         method: "POST",
@@ -22,6 +23,8 @@ export default function Home() {
       });
 
       const data = await response.json();
+      console.log("Fetched recipes:", data); // Debugging
+
       if (data.recipes) {
         setRecipes(data.recipes);
       } else {
@@ -29,48 +32,46 @@ export default function Home() {
       }
     } catch (err) {
       setError("Failed to fetch recipes.");
+      console.error("Fetch error:", err);
     }
+
     setLoading(false);
   };
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial, sans-serif" }}>
-      <h1>Recipe Finder</h1>
-      <p>Enter ingredients you already have, separated by commas:</p>
-      <div style={{ marginBottom: "1rem" }}>
-        <input
-          type="text"
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-          placeholder="e.g. rice, chicken, broccoli"
-          style={{ width: "300px", padding: "0.5rem", marginRight: "1rem" }}
-        />
-        <button onClick={fetchRecipes} style={{ padding: "0.5rem 1rem" }}>
-          Search
-        </button>
-      </div>
+      <h1>Recipe Search</h1>
+      <input
+        type="text"
+        placeholder="Enter ingredients (e.g. chicken, rice, broccoli)"
+        value={ingredients}
+        onChange={(e) => setIngredients(e.target.value)}
+        style={{ width: "100%", padding: "8px", fontSize: "16px" }}
+      />
+      <button
+        onClick={fetchRecipes}
+        style={{ marginTop: "1rem", padding: "10px 20px", fontSize: "16px" }}
+      >
+        Search
+      </button>
 
       {loading && <p>Loading recipes...</p>}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
-        {recipes.map((recipe, index) => (
-          <div
-            key={index}
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: "8px",
-              padding: "1rem",
-              width: "300px",
-              background: "#f9f9f9",
-            }}
-          >
-            <h3>{recipe.title}</h3>
-            <p><strong>Ingredients:</strong> {recipe.ingredients?.join(", ")}</p>
-            <p><strong>Directions:</strong> {recipe.directions}</p>
-          </div>
-        ))}
-      </div>
+      {recipes.length > 0 && (
+        <div style={{ marginTop: "2rem" }}>
+          <h2>Results:</h2>
+          <ul>
+            {recipes.map((recipe, index) => (
+              <li key={index} style={{ marginBottom: "1.5rem" }}>
+                <h3>{recipe.title}</h3>
+                <p><strong>Ingredients:</strong> {Array.isArray(recipe.ingredients) ? recipe.ingredients.join(", ") : recipe.ingredients}</p>
+                <p><strong>Directions:</strong> {Array.isArray(recipe.directions) ? recipe.directions.join(" ") : recipe.directions}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
