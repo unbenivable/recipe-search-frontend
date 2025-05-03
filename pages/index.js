@@ -522,7 +522,7 @@ export default function Home() {
                   whiteSpace: "nowrap"
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: showDietaryDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
                   <path d="M12 9L20 16H4L12 9Z" fill={Object.values(dietaryFilters).some(v => v) ? "#34c759" : "#0071e3"} />
                 </svg>
                 <span>Dietary</span>
