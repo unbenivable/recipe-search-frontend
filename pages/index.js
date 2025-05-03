@@ -31,13 +31,6 @@ export default function Home() {
     setLoading(true);
     setErrorMessage('');
     
-    // Make sure we have ingredients to search
-    if (!ingredients.trim()) {
-      setErrorMessage('Please enter ingredients to search');
-      setLoading(false);
-      return;
-    }
-    
     try {
       // Determine if input uses commas or spaces
       const hasCommas = ingredients.includes(',');
@@ -52,6 +45,13 @@ export default function Home() {
         ingredientsArray = ingredients.split(' ').map(i => i.trim()).filter(i => i);
       }
       
+      // Enforce minimum of 3 ingredients
+      if (ingredientsArray.length < 3) {
+        setErrorMessage('Please enter at least 3 ingredients for better results');
+        setLoading(false);
+        return;
+      }
+      
       // Log for debugging
       console.log('Searching for ingredients:', ingredientsArray);
       
@@ -64,7 +64,8 @@ export default function Home() {
         process.env.NEXT_PUBLIC_BACKEND_URL,
         { 
           ingredients: ingredientsArray,
-          dietary: activeFilters.length > 0 ? activeFilters : undefined
+          dietary: activeFilters.length > 0 ? activeFilters : undefined,
+          matchAll: true // Ensure all ingredients must be present in results
         }
       );
       
@@ -76,7 +77,7 @@ export default function Home() {
         const filterMessage = activeFilters.length > 0 
           ? ` matching your dietary preferences (${activeFilters.join(', ')})`
           : '';
-        setErrorMessage(`No recipes found with these ingredients${filterMessage}. Try different ingredients or filters.`);
+        setErrorMessage(`No recipes found with all these ingredients${filterMessage}. Try different ingredients or filters.`);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
@@ -152,11 +153,19 @@ export default function Home() {
           
         console.log('Applied dietary filters:', activeFilters);
         
+        // Only proceed if we have at least 3 ingredients
+        if (detected.length < 3) {
+          setDetectError('Not enough ingredients detected. Please try a different image with at least 3 visible ingredients.');
+          setDetectLoading(false);
+          return;
+        }
+        
         const recipeResp = await axios.post(
           process.env.NEXT_PUBLIC_BACKEND_URL,
           { 
             ingredients: detected,
-            dietary: activeFilters.length > 0 ? activeFilters : undefined
+            dietary: activeFilters.length > 0 ? activeFilters : undefined,
+            matchAll: true // Ensure all ingredients must be present in results
           }
         );
         console.log('Recipe response:', recipeResp.data);
@@ -167,7 +176,7 @@ export default function Home() {
           const filterMessage = activeFilters.length > 0 
             ? ` matching your dietary preferences (${activeFilters.join(', ')})`
             : '';
-          setDetectError(`No recipes found with detected ingredients${filterMessage}. Try a different image or adjust dietary filters.`);
+          setDetectError(`No recipes found with all detected ingredients${filterMessage}. Try a different image or adjust dietary filters.`);
         }
       }
     } catch (error) {
@@ -311,7 +320,7 @@ export default function Home() {
             color: "#636366",
             marginBottom: "1.5rem"
           }}>
-            Enter ingredients separated by commas or spaces (e.g. chicken rice or chicken, rice)
+            Enter at least 3 ingredients separated by commas or spaces (e.g. chicken rice garlic)
             {Object.values(dietaryFilters).some(v => v) && (
               <span style={{ display: "block", marginTop: "0.5rem", fontWeight: "500", color: "#34c759" }}>
                 Active filters: {Object.entries(dietaryFilters)
@@ -343,7 +352,7 @@ export default function Home() {
                     fetchRecipes();
                   }
                 }}
-                placeholder="e.g. rice chicken"
+                placeholder="e.g. rice chicken garlic"
                 style={{ 
                   padding: "0.85rem 1rem", 
                   paddingRight: "3.5rem",
