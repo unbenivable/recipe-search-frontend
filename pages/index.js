@@ -29,6 +29,10 @@ export default function Home() {
     dairyFree: false,
     lowCarb: false
   });
+  
+  const [cookingTimeFilter, setCookingTimeFilter] = useState('any'); // 'any', 'under15', 'under30', 'under60'
+  const [cuisineFilter, setCuisineFilter] = useState('any'); // 'any', 'italian', 'mexican', 'asian', 'american', 'indian', etc.
+  const [mealTypeFilter, setMealTypeFilter] = useState('any'); // 'any', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack'
 
   // Add lists for non-vegan/vegetarian ingredients to filter out
   const meatIngredients = [
@@ -275,13 +279,26 @@ export default function Home() {
         .filter(([_, isActive]) => isActive)
         .map(([filter]) => filter);
       
+      // Add additional filters if they're not set to 'any'
+      const additionalFilters = {};
+      if (cookingTimeFilter !== 'any') {
+        additionalFilters.cookingTime = cookingTimeFilter;
+      }
+      if (cuisineFilter !== 'any') {
+        additionalFilters.cuisine = cuisineFilter;
+      }
+      if (mealTypeFilter !== 'any') {
+        additionalFilters.mealType = mealTypeFilter;
+      }
+      
       // Use flexible matching for more results
       const useStrictMatching = false;
       
       console.log('API request payload:', { 
         ingredients: ingredientsArray,
         dietary: activeFilters.length > 0 ? activeFilters : undefined,
-        matchAll: useStrictMatching
+        matchAll: useStrictMatching,
+        ...additionalFilters
       });
       
       const response = await axios.post(
@@ -289,7 +306,8 @@ export default function Home() {
         { 
           ingredients: ingredientsArray,
           dietary: activeFilters.length > 0 ? activeFilters : undefined,
-          matchAll: useStrictMatching // Set to false for more flexible matching
+          matchAll: useStrictMatching, // Set to false for more flexible matching
+          ...additionalFilters
         }
       );
       
@@ -393,12 +411,25 @@ export default function Home() {
           return;
         }
         
+        // Add additional filters if they're not set to 'any'
+        const additionalFilters = {};
+        if (cookingTimeFilter !== 'any') {
+          additionalFilters.cookingTime = cookingTimeFilter;
+        }
+        if (cuisineFilter !== 'any') {
+          additionalFilters.cuisine = cuisineFilter;
+        }
+        if (mealTypeFilter !== 'any') {
+          additionalFilters.mealType = mealTypeFilter;
+        }
+        
         const recipeResp = await axios.post(
           process.env.NEXT_PUBLIC_BACKEND_URL,
           { 
             ingredients: detected,
             dietary: activeFilters.length > 0 ? activeFilters : undefined,
-            matchAll: true // Ensure all ingredients must be present in results
+            matchAll: false, // More flexible matching for detection
+            ...additionalFilters
           }
         );
         console.log('Recipe response:', recipeResp.data);
@@ -696,6 +727,55 @@ export default function Home() {
                   .join(', ')}
               </span>
             )}
+            
+            {/* Display active additional filters */}
+            {(cookingTimeFilter !== 'any' || cuisineFilter !== 'any' || mealTypeFilter !== 'any') && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.5rem", justifyContent: "center" }}>
+                {cookingTimeFilter !== 'any' && (
+                  <span style={{ 
+                    display: "inline-block", 
+                    padding: "0.25rem 0.75rem", 
+                    backgroundColor: "rgba(0,113,227,0.1)", 
+                    color: "#0071e3", 
+                    borderRadius: "1rem", 
+                    fontSize: "13px", 
+                    fontWeight: "500" 
+                  }}>
+                    {cookingTimeFilter === 'under15' ? 'Under 15 mins' : 
+                     cookingTimeFilter === 'under30' ? 'Under 30 mins' : 
+                     cookingTimeFilter === 'under60' ? 'Under 1 hour' : ''}
+                  </span>
+                )}
+                
+                {cuisineFilter !== 'any' && (
+                  <span style={{ 
+                    display: "inline-block", 
+                    padding: "0.25rem 0.75rem", 
+                    backgroundColor: "rgba(52,199,89,0.1)", 
+                    color: "#34c759", 
+                    borderRadius: "1rem", 
+                    fontSize: "13px", 
+                    fontWeight: "500" 
+                  }}>
+                    {cuisineFilter.charAt(0).toUpperCase() + cuisineFilter.slice(1)}
+                  </span>
+                )}
+                
+                {mealTypeFilter !== 'any' && (
+                  <span style={{ 
+                    display: "inline-block", 
+                    padding: "0.25rem 0.75rem", 
+                    backgroundColor: "rgba(255,149,0,0.1)", 
+                    color: "#ff9500", 
+                    borderRadius: "1rem", 
+                    fontSize: "13px", 
+                    fontWeight: "500" 
+                  }}>
+                    {mealTypeFilter.charAt(0).toUpperCase() + mealTypeFilter.slice(1)}
+                  </span>
+                )}
+              </div>
+            )}
           </p>
           
           <div style={{ 
@@ -709,10 +789,10 @@ export default function Home() {
               width: "100%",
               maxWidth: "400px",
             }}>
-              <input
-                type="text"
-                value={ingredients}
-                onChange={(e) => setIngredients(e.target.value)}
+        <input
+          type="text"
+          value={ingredients}
+          onChange={(e) => setIngredients(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -773,8 +853,9 @@ export default function Home() {
                 onClick={() => setShowDietaryDropdown(!showDietaryDropdown)}
                 style={{ 
                   padding: "0.85rem 1rem",
-                  backgroundColor: "white",
-                  color: Object.values(dietaryFilters).some(v => v) ? "#34c759" : "#0071e3",
+                  backgroundColor: "var(--card-bg)",
+                  color: (Object.values(dietaryFilters).some(v => v) || cookingTimeFilter !== 'any' || cuisineFilter !== 'any' || mealTypeFilter !== 'any') 
+                    ? "#34c759" : "var(--primary)",
                   border: "none",
                   borderRadius: "12px",
                   cursor: "pointer",
@@ -790,9 +871,18 @@ export default function Home() {
                 }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ transform: showDietaryDropdown ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>
-                  <path d="M12 9L20 16H4L12 9Z" fill={Object.values(dietaryFilters).some(v => v) ? "#34c759" : "#0071e3"} />
+                  <path d="M12 9L20 16H4L12 9Z" fill={(Object.values(dietaryFilters).some(v => v) || cookingTimeFilter !== 'any' || cuisineFilter !== 'any' || mealTypeFilter !== 'any') ? "#34c759" : "#0071e3"} />
                 </svg>
-                <span>Dietary</span>
+                <span>Filters</span>
+                {(Object.values(dietaryFilters).some(v => v) || cookingTimeFilter !== 'any' || cuisineFilter !== 'any' || mealTypeFilter !== 'any') && (
+                  <div style={{
+                    width: "6px",
+                    height: "6px",
+                    backgroundColor: "#34c759",
+                    borderRadius: "50%",
+                    marginLeft: "-2px"
+                  }} />
+                )}
               </button>
               
               {showDietaryDropdown && (
@@ -864,15 +954,215 @@ export default function Home() {
                     </div>
                   ))}
                   
-                  {Object.values(dietaryFilters).some(v => v) && (
+                  {/* Cooking Time Filter */}
+                  <div style={{ 
+                    borderTop: "1px solid #f2f2f7",
+                    borderBottom: "1px solid #f2f2f7", 
+                    paddingTop: "1rem",
+                    paddingBottom: "0.75rem", 
+                    marginTop: "1rem",
+                    marginBottom: "0.75rem" 
+                  }}>
+                    <h3 style={{ 
+                      fontSize: "16px", 
+                      fontWeight: "600", 
+                      color: "#1d1d1f", 
+                      margin: "0 0 0.75rem 0" 
+                    }}>
+                      Cooking Time (Est.)
+                    </h3>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {[
+                        { value: 'any', label: 'Any Time' },
+                        { value: 'under15', label: 'Under 15 Minutes' },
+                        { value: 'under30', label: 'Under 30 Minutes' },
+                        { value: 'under60', label: 'Under 1 Hour' }
+                      ].map(option => (
+                        <div 
+                          key={option.value}
+                          onClick={() => setCookingTimeFilter(option.value)}
+                          style={{ 
+                            display: "flex", 
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            padding: "0.25rem 0.5rem",
+                            borderRadius: "6px",
+                            backgroundColor: cookingTimeFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
+                            cursor: "pointer",
+                            transition: "background-color 0.2s ease"
+                          }}
+                        >
+                          <div style={{
+                            width: "16px",
+                            height: "16px",
+                            borderRadius: "50%",
+                            border: "2px solid #0071e3",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}>
+                            {cookingTimeFilter === option.value && (
+                              <div style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: "#0071e3"
+                              }} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                            {option.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Cuisine Type Filter */}
+                  <div style={{ 
+                    borderBottom: "1px solid #f2f2f7", 
+                    paddingBottom: "0.75rem", 
+                    marginBottom: "0.75rem" 
+                  }}>
+                    <h3 style={{ 
+                      fontSize: "16px", 
+                      fontWeight: "600", 
+                      color: "#1d1d1f", 
+                      margin: "0 0 0.75rem 0" 
+                    }}>
+                      Cuisine Type
+                    </h3>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {[
+                        { value: 'any', label: 'Any Cuisine' },
+                        { value: 'italian', label: 'Italian' },
+                        { value: 'mexican', label: 'Mexican' },
+                        { value: 'asian', label: 'Asian' },
+                        { value: 'american', label: 'American' },
+                        { value: 'indian', label: 'Indian' }
+                      ].map(option => (
+                        <div 
+                          key={option.value}
+                          onClick={() => setCuisineFilter(option.value)}
+                          style={{ 
+                            display: "flex", 
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            padding: "0.25rem 0.5rem",
+                            borderRadius: "6px",
+                            backgroundColor: cuisineFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
+                            cursor: "pointer",
+                            transition: "background-color 0.2s ease"
+                          }}
+                        >
+                          <div style={{
+                            width: "16px",
+                            height: "16px",
+                            borderRadius: "50%",
+                            border: "2px solid #0071e3",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}>
+                            {cuisineFilter === option.value && (
+                              <div style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: "#0071e3"
+                              }} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                            {option.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* Meal Type Filter */}
+                  <div style={{ 
+                    paddingBottom: "0.75rem", 
+                    marginBottom: "0.75rem" 
+                  }}>
+                    <h3 style={{ 
+                      fontSize: "16px", 
+                      fontWeight: "600", 
+                      color: "#1d1d1f", 
+                      margin: "0 0 0.75rem 0" 
+                    }}>
+                      Meal Type
+                    </h3>
+                    
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {[
+                        { value: 'any', label: 'Any Meal' },
+                        { value: 'breakfast', label: 'Breakfast' },
+                        { value: 'lunch', label: 'Lunch' },
+                        { value: 'dinner', label: 'Dinner' },
+                        { value: 'dessert', label: 'Dessert' },
+                        { value: 'snack', label: 'Snack' }
+                      ].map(option => (
+                        <div 
+                          key={option.value}
+                          onClick={() => setMealTypeFilter(option.value)}
+                          style={{ 
+                            display: "flex", 
+                            alignItems: "center",
+                            gap: "0.5rem",
+                            padding: "0.25rem 0.5rem",
+                            borderRadius: "6px",
+                            backgroundColor: mealTypeFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
+                            cursor: "pointer",
+                            transition: "background-color 0.2s ease"
+                          }}
+                        >
+                          <div style={{
+                            width: "16px",
+                            height: "16px",
+                            borderRadius: "50%",
+                            border: "2px solid #0071e3",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}>
+                            {mealTypeFilter === option.value && (
+                              <div style={{
+                                width: "8px",
+                                height: "8px",
+                                borderRadius: "50%",
+                                backgroundColor: "#0071e3"
+                              }} />
+                            )}
+                          </div>
+                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                            {option.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {Object.values(dietaryFilters).some(v => v) || 
+                   cookingTimeFilter !== 'any' || 
+                   cuisineFilter !== 'any' || 
+                   mealTypeFilter !== 'any' ? (
                     <button
-                      onClick={() => setDietaryFilters({
-                        vegetarian: false,
-                        vegan: false,
-                        glutenFree: false,
-                        dairyFree: false,
-                        lowCarb: false
-                      })}
+                      onClick={() => {
+                        setDietaryFilters({
+                          vegetarian: false,
+                          vegan: false,
+                          glutenFree: false,
+                          dairyFree: false,
+                          lowCarb: false
+                        });
+                        setCookingTimeFilter('any');
+                        setCuisineFilter('any');
+                        setMealTypeFilter('any');
+                      }}
                       style={{
                         width: "100%",
                         padding: "0.6rem",
@@ -888,7 +1178,7 @@ export default function Home() {
                     >
                       Reset All Filters
                     </button>
-                  )}
+                  ) : null}
                 </div>
               )}
             </div>
@@ -985,6 +1275,59 @@ export default function Home() {
                   {recipe.title}
                 </h3>
                 
+                {/* Recipe metadata tags */}
+                {(recipe.cookingTime || recipe.cuisine || recipe.mealType) && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    {recipe.cookingTime && (
+                      <span style={{ 
+                        display: "inline-flex", 
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "0.2rem 0.5rem", 
+                        backgroundColor: "rgba(0,113,227,0.1)", 
+                        color: "#0071e3", 
+                        borderRadius: "0.75rem", 
+                        fontSize: "12px", 
+                        fontWeight: "500" 
+                      }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z" fill="currentColor"/>
+                          <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z" fill="currentColor"/>
+                        </svg>
+                        {recipe.cookingTime} min
+                      </span>
+                    )}
+                    
+                    {recipe.cuisine && (
+                      <span style={{ 
+                        display: "inline-block", 
+                        padding: "0.2rem 0.5rem", 
+                        backgroundColor: "rgba(52,199,89,0.1)", 
+                        color: "#34c759", 
+                        borderRadius: "0.75rem", 
+                        fontSize: "12px", 
+                        fontWeight: "500" 
+                      }}>
+                        {recipe.cuisine}
+                      </span>
+                    )}
+                    
+                    {recipe.mealType && (
+                      <span style={{ 
+                        display: "inline-block", 
+                        padding: "0.2rem 0.5rem", 
+                        backgroundColor: "rgba(255,149,0,0.1)", 
+                        color: "#ff9500", 
+                        borderRadius: "0.75rem", 
+                        fontSize: "12px", 
+                        fontWeight: "500" 
+                      }}>
+                        {recipe.mealType}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
                 {recipe.matchScore && (
                   <div style={{
                     display: "flex",
@@ -1028,15 +1371,15 @@ export default function Home() {
                   marginBottom: "1.25rem", 
                   color: "#1d1d1f" 
                 }}>
-                  {recipe.ingredients.slice(0, 5).map((ing, i) => (
+              {recipe.ingredients.slice(0, 5).map((ing, i) => (
                     <li key={i} style={{ marginBottom: "0.25rem", fontSize: "15px" }}>{ing}</li>
-                  ))}
-                </ul>
+              ))}
+            </ul>
 
-                {recipe.directions && (
+            {recipe.directions && (
+              <div>
+                {expanded === index ? (
                   <div>
-                    {expanded === index ? (
-                      <div>
                         <h4 style={{ 
                           fontSize: "15px", 
                           fontWeight: "600", 
@@ -1093,8 +1436,8 @@ export default function Home() {
               </div>
             ))}
           </div>
-        </div>
-      ) : (
+                  </div>
+                ) : (
         <>
           <p style={{ 
             textAlign: "center", 
@@ -1148,7 +1491,7 @@ export default function Home() {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#0071e3"/>
+                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill="#0071e3"/>
                   </svg>
                   <span>Select Image</span>
                   <input 
@@ -1381,12 +1724,12 @@ export default function Home() {
                           <h4>Directions:</h4>
                           <p>{recipe.directions.join(' ')}</p>
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
           )}
         </>
       )}
