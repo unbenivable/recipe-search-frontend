@@ -53,9 +53,53 @@ export default function Home() {
     // Check if any ingredient in the recipe contains a forbidden ingredient
     return recipe.ingredients.some(ingredient => {
       const lowerIngredient = ingredient.toLowerCase();
-      return forbiddenList.some(forbidden => 
-        lowerIngredient.includes(forbidden.toLowerCase())
-      );
+      return forbiddenList.some(forbidden => {
+        const lowerForbidden = forbidden.toLowerCase();
+        
+        // Split ingredient into words
+        const words = lowerIngredient.split(/\s+|,|;|\(|\)|\/|-/);
+        
+        // Check if the forbidden ingredient is a complete word in the ingredient
+        // This prevents "rice" from matching "rice vinegar"
+        return words.some(word => word === lowerForbidden) ||
+               // Also check if it's at the beginning followed by a non-word character
+               lowerIngredient.match(new RegExp(`^${lowerForbidden}\\b`)) ||
+               // Or at the end preceded by a non-word character
+               lowerIngredient.match(new RegExp(`\\b${lowerForbidden}$`));
+      });
+    });
+  };
+
+  // Add precise ingredient matching helper function
+  const ingredientMatches = (recipeIngredient, searchIngredient) => {
+    // Convert both to lowercase for case-insensitive matching
+    const lowerRecipeIng = recipeIngredient.toLowerCase();
+    const lowerSearchIng = searchIngredient.toLowerCase();
+    
+    // Split the recipe ingredient into words
+    const words = lowerRecipeIng.split(/\s+|,|;|\(|\)|\/|-/);
+    
+    // Check if the search ingredient is a complete word in the recipe ingredient
+    // This prevents "rice" from matching "rice vinegar"
+    return words.includes(lowerSearchIng) ||
+           // Also check if the search ingredient is at the beginning followed by a non-word character
+           lowerRecipeIng.match(new RegExp(`^${lowerSearchIng}\\b`)) ||
+           // Or at the end preceded by a non-word character
+           lowerRecipeIng.match(new RegExp(`\\b${lowerSearchIng}$`));
+  };
+
+  // Apply client-side filtering for precise ingredient matching
+  const filterRecipesByIngredients = (recipes, ingredients) => {
+    if (!recipes || !ingredients || ingredients.length === 0) return recipes;
+    
+    return recipes.filter(recipe => {
+      // Check if all search ingredients are present in the recipe
+      return ingredients.every(searchIngredient => {
+        // Consider a match if any recipe ingredient matches the search ingredient
+        return recipe.ingredients.some(recipeIngredient => 
+          ingredientMatches(recipeIngredient, searchIngredient)
+        );
+      });
     });
   };
 
@@ -140,6 +184,9 @@ export default function Home() {
         ingredientsArray = ingredients.split(' ').map(i => i.trim()).filter(i => i);
       }
       
+      // Convert all ingredients to lowercase for consistent matching
+      ingredientsArray = ingredientsArray.map(ing => ing.toLowerCase());
+      
       // Enforce minimum of 3 ingredients
       if (ingredientsArray.length < 3) {
         setErrorMessage('Please enter at least 3 ingredients for better results');
@@ -165,10 +212,15 @@ export default function Home() {
       );
       
       console.log('Search response:', response.data);
-      setRecipes(response.data.recipes || []);
+      let recipesData = response.data.recipes || [];
+      
+      // Apply client-side filtering for precise ingredient matching
+      recipesData = filterRecipesByIngredients(recipesData, ingredientsArray);
+      
+      setRecipes(recipesData);
       
       // Show a message if no recipes found
-      if (response.data.recipes?.length === 0) {
+      if (recipesData.length === 0) {
         const filterMessage = activeFilters.length > 0 
           ? ` matching your dietary preferences (${activeFilters.join(', ')})`
           : '';
@@ -264,10 +316,15 @@ export default function Home() {
           }
         );
         console.log('Recipe response:', recipeResp.data);
-        setDetectRecipes(recipeResp.data.recipes || []);
+        
+        // Apply client-side filtering for precise ingredient matching
+        let recipesData = recipeResp.data.recipes || [];
+        recipesData = filterRecipesByIngredients(recipesData, detected);
+        
+        setDetectRecipes(recipesData);
         
         // Show a message if no recipes found
-        if (recipeResp.data.recipes?.length === 0) {
+        if (recipesData.length === 0) {
           const filterMessage = activeFilters.length > 0 
             ? ` matching your dietary preferences (${activeFilters.join(', ')})`
             : '';
@@ -796,7 +853,7 @@ export default function Home() {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#0071e3"/>
+                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#0071e3"/>
                   </svg>
                   <span>Select Image</span>
                   <input 
