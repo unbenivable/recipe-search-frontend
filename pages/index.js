@@ -388,8 +388,12 @@ export default function Home() {
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
       maxWidth: "1200px",
       margin: "0 auto",
-      minHeight: "100vh"
-    }}>
+      minHeight: "100vh",
+      display: "flex",
+      flexDirection: "column"
+    }}
+    className="main-container"
+    >
       <h1 style={{ 
         textAlign: "center", 
         fontSize: "32px", 
@@ -1014,14 +1018,24 @@ export default function Home() {
         </>
       )}
       <footer style={{
-        marginTop: "3rem",
+        marginTop: "auto",
         padding: "1.5rem",
         textAlign: "center",
-        borderTop: "1px solid var(--card-border)",
+        position: "relative",
         color: "#8e8e93",
         fontSize: "14px"
-      }}>
-        <p style={{ marginBottom: "0.75rem" }}>Niv & Gal © 2025</p>
+      }}
+      className="footer"
+      >
+        {/* Stylistic divider */}
+        <div className="footer-divider" style={{
+          position: "absolute",
+          top: 0,
+          left: "5%",
+          right: "5%",
+          height: "1px"
+        }} />
+        <p style={{ marginBottom: "0.75rem", paddingTop: "1.5rem" }}>Niv & Gal © 2025</p>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
           <span style={{ fontSize: "13px" }}>Dark mode:</span>
           <ThemeSwitcher />

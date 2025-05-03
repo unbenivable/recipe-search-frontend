@@ -32,6 +32,9 @@ html,
 body {
   max-width: 100vw;
   overflow-x: hidden;
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
 body {
@@ -93,4 +96,29 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+/* Footer styling in light and dark mode */
+[data-theme="dark"] .footer-divider {
+  background: linear-gradient(to right, rgba(60,60,60,0), rgba(60,60,60,0.8) 50%, rgba(60,60,60,0));
+}
+
+.dark .footer-divider {
+  background: linear-gradient(to right, rgba(60,60,60,0), rgba(60,60,60,0.8) 50%, rgba(60,60,60,0));
+}
+
+.footer-divider {
+  background: linear-gradient(to right, rgba(200,200,200,0), rgba(200,200,200,0.8) 50%, rgba(200,200,200,0));
+}
+
+/* Make sure content area expands to push footer down */
+.main-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.footer {
+  margin-top: auto;
+  position: relative;
 }
