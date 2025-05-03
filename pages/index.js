@@ -584,8 +584,8 @@ export default function Home() {
 
   return (
     <div style={{ 
-      background: "#f5f5f7", 
-      color: "#1d1d1f", 
+      background: "var(--background)", 
+      color: "var(--foreground)", 
       padding: "2rem", 
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif", 
       maxWidth: "1200px",
@@ -601,7 +601,7 @@ export default function Home() {
         fontSize: "32px", 
         fontWeight: "600", 
         marginBottom: "0.5rem", 
-        color: "#1d1d1f"
+        color: "var(--foreground)"
       }}>Recipe Finder</h1>
       <h2 style={{ 
         textAlign: "center", 
@@ -617,7 +617,7 @@ export default function Home() {
         flexDirection: isMobile ? "column" : "row",
         justifyContent: "center", 
         marginBottom: "2rem",
-        background: "#e8e8ed",
+        background: "var(--card-bg)",
         padding: "4px",
         borderRadius: "12px",
         maxWidth: "600px",
@@ -723,8 +723,8 @@ export default function Home() {
                   borderRadius: "12px",
                   border: "none",
                   fontSize: "16px",
-                  backgroundColor: "white",
-                  color: "#1d1d1f",
+                  backgroundColor: "var(--card-bg)",
+                  color: "var(--foreground)",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                   outline: "none",
                   transition: "all 0.2s ease"
@@ -797,7 +797,7 @@ export default function Home() {
                   top: "calc(100% + 8px)",
                   right: 0,
                   width: "220px",
-                  background: "white",
+                  background: "var(--card-bg)",
                   borderRadius: "12px",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   padding: "1rem",
@@ -900,7 +900,7 @@ export default function Home() {
               <div 
                 key={index} 
                 style={{ 
-                  background: "white",
+                  background: "var(--card-bg)",
                   borderRadius: "16px", 
                   padding: "1.5rem", 
                   width: "100%", 
