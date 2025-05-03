@@ -50,6 +50,8 @@ Deploy the application to Railway:
 ## API Endpoints
 
 - `/api/imageSearch` - POST endpoint for searching images using Vertex AI
+- `/api/detectIngredients` - POST endpoint for detecting ingredients in food images
+- `/api/health` - GET endpoint for health checks (used by deployment platforms)
 
 ## Technologies Used
 
