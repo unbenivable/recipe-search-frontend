@@ -527,8 +527,12 @@ export default function Home() {
           sessionStorage.setItem('recipeData', JSON.stringify(storedRecipes));
         }
         
+        // Create a shareable URL with recipe data in the query params
+        const recipeData = encodeURIComponent(JSON.stringify(recipe));
+        const recipeUrl = `/recipe/${recipe.id}?data=${recipeData}`;
+        
         // Open in new tab
-        window.open(`/recipe/${recipe.id}`, '_blank');
+        window.open(recipeUrl, '_blank');
       } catch (err) {
         console.error('Error storing recipe data:', err);
       }
@@ -1005,7 +1009,7 @@ export default function Home() {
                       }}/>
                     </div>
                     <span style={{ color: "#8e8e93", whiteSpace: "nowrap" }}>
-                      {recipe.matchScore} out of {recipe.matchDetails ? recipe.matchDetails.length : 0} ingredients
+                      {recipe.matchScore} out of {ingredientsArray?.length || 2} ingredients
                     </span>
                   </div>
                 )}
