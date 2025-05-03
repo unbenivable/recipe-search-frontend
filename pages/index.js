@@ -217,46 +217,24 @@ export default function Home() {
     setFilteredRecipes(applyDietaryFilters(recipes));
   }, [recipes, dietaryFilters]);
   
-  // Apply dietary filters to detected recipes
+  // Real-time search effect - fetch results as the user types
   useEffect(() => {
-    setDetectFilteredRecipes(applyDietaryFilters(detectRecipes));
-  }, [detectRecipes, dietaryFilters]);
-
-  // Log the backend URL for debugging
-  console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
-
-  // Helper function to rank recipes by how many ingredients they match
-  const rankRecipesByIngredientMatches = (recipes, searchIngredients) => {
-    // Calculate the match score for each recipe
-    return recipes.map(recipe => {
-      let matchCount = 0;
-      const matchDetails = [];
-      
-      // Check each search ingredient against recipe ingredients
-      searchIngredients.forEach(searchIng => {
-        const found = recipe.ingredients.some(recipeIng => 
-          ingredientMatches(recipeIng, searchIng)
-        );
-        if (found) {
-          matchCount++;
-          matchDetails.push(searchIng);
-        }
-      });
-      
-      // Return recipe with match score
-      return {
-        ...recipe,
-        matchScore: matchCount,
-        matchDetails: matchDetails,
-        searchIngredients: searchIngredients, // Store the search ingredients
-        matchPercentage: (matchCount / searchIngredients.length) * 100
-      };
-    })
-    // Sort by match score (highest first)
-    .sort((a, b) => b.matchScore - a.matchScore);
-  };
-
-  const fetchRecipes = async () => {
+    // Debounce to prevent too many API calls
+    const debounceTimeout = setTimeout(() => {
+      if (ingredients.trim().length > 0) {
+        // Don't call fetchRecipes directly as it's a function that changes state
+        // which would trigger another render and cause an infinite loop
+        handleSearchChange();
+      }
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(debounceTimeout);
+  }, [ingredients]); // Run when ingredients change
+  
+  // Extracted function to handle search logic without causing infinite loops
+  const handleSearchChange = async () => {
+    if (!ingredients.trim()) return;
+    
     setLoading(true);
     setErrorMessage('');
     
@@ -342,7 +320,7 @@ export default function Home() {
         const filterMessage = activeFilters.length > 0 
           ? ` matching your dietary preferences (${activeFilters.join(', ')})`
           : '';
-        const matchStrategy = ingredientsArray.length > 2 ? 'all' : 'any';
+        const matchStrategy = ingredientsArray.length >= 3 ? 'all' : 'any';
         setErrorMessage(`No recipes found with ${matchStrategy} of these ingredients${filterMessage}. Try different ingredients or filters.`);
       }
     } catch (error) {
@@ -351,6 +329,45 @@ export default function Home() {
       setErrorMessage('Failed to fetch recipes. Please try again.');
     }
     setLoading(false);
+  };
+
+  // Apply dietary filters to detected recipes
+  useEffect(() => {
+    setDetectFilteredRecipes(applyDietaryFilters(detectRecipes));
+  }, [detectRecipes, dietaryFilters]);
+
+  // Log the backend URL for debugging
+  console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
+
+  // Helper function to rank recipes by how many ingredients they match
+  const rankRecipesByIngredientMatches = (recipes, searchIngredients) => {
+    // Calculate the match score for each recipe
+    return recipes.map(recipe => {
+      let matchCount = 0;
+      const matchDetails = [];
+      
+      // Check each search ingredient against recipe ingredients
+      searchIngredients.forEach(searchIng => {
+        const found = recipe.ingredients.some(recipeIng => 
+          ingredientMatches(recipeIng, searchIng)
+        );
+        if (found) {
+          matchCount++;
+          matchDetails.push(searchIng);
+        }
+      });
+      
+      // Return recipe with match score
+      return {
+        ...recipe,
+        matchScore: matchCount,
+        matchDetails: matchDetails,
+        searchIngredients: searchIngredients, // Store the search ingredients
+        matchPercentage: (matchCount / searchIngredients.length) * 100
+      };
+    })
+    // Sort by match score (highest first)
+    .sort((a, b) => b.matchScore - a.matchScore);
   };
 
   const searchImages = async () => {
@@ -630,6 +647,10 @@ export default function Home() {
         </p>
       </div>
     );
+  };
+
+  const fetchRecipes = async () => {
+    handleSearchChange();
   };
 
   return (
@@ -920,7 +941,7 @@ export default function Home() {
                     <h3 style={{ 
                       fontSize: "16px", 
                       fontWeight: "600", 
-                      color: "#1d1d1f", 
+                      color: "var(--foreground)", 
                       margin: 0 
                     }}>
                       Dietary Preferences
@@ -935,7 +956,7 @@ export default function Home() {
                       padding: "0.5rem 0",
                       borderBottom: "1px solid #f2f2f7"
                     }}>
-                      <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                      <span style={{ fontSize: "14px", color: "var(--foreground)" }}>
                         {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
                       </span>
                       
@@ -981,7 +1002,7 @@ export default function Home() {
                     <h3 style={{ 
                       fontSize: "16px", 
                       fontWeight: "600", 
-                      color: "#1d1d1f", 
+                      color: "var(--foreground)", 
                       margin: "0 0 0.75rem 0" 
                     }}>
                       Cooking Time (Est.)
@@ -1026,7 +1047,7 @@ export default function Home() {
                               }} />
                             )}
                           </div>
-                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                          <span style={{ fontSize: "14px", color: "var(--foreground)" }}>
                             {option.label}
                           </span>
                         </div>
@@ -1043,7 +1064,7 @@ export default function Home() {
                     <h3 style={{ 
                       fontSize: "16px", 
                       fontWeight: "600", 
-                      color: "#1d1d1f", 
+                      color: "var(--foreground)", 
                       margin: "0 0 0.75rem 0" 
                     }}>
                       Cuisine Type
@@ -1287,7 +1308,7 @@ export default function Home() {
                   fontWeight: "600", 
                   marginTop: 0,
                   marginBottom: "0.5rem",
-                  color: "#1d1d1f",
+                  color: "var(--foreground)",
                   paddingRight: "70px"
                 }}>
                   {recipe.title}
@@ -1378,7 +1399,7 @@ export default function Home() {
                 <h4 style={{ 
                   fontSize: "15px", 
                   fontWeight: "600", 
-                  color: "#636366",
+                  color: "var(--foreground)",
                   marginBottom: "0.5rem" 
                 }}>
                   Ingredients:
@@ -1387,7 +1408,7 @@ export default function Home() {
                 <ul style={{ 
                   paddingLeft: "1.25rem", 
                   marginBottom: "1.25rem", 
-                  color: "#1d1d1f" 
+                  color: "var(--foreground)" 
                 }}>
               {recipe.ingredients.slice(0, 5).map((ing, i) => (
                     <li key={i} style={{ marginBottom: "0.25rem", fontSize: "15px" }}>{ing}</li>
@@ -1716,7 +1737,7 @@ export default function Home() {
                   <h4 style={{ 
                     fontSize: "15px", 
                     fontWeight: "600", 
-                    color: "#636366",
+                    color: "var(--foreground)",
                     marginBottom: "0.5rem" 
                   }}>
                     Ingredients:
@@ -1725,7 +1746,7 @@ export default function Home() {
                   <ul style={{ 
                     paddingLeft: "1.25rem", 
                     marginBottom: "1.25rem", 
-                    color: "#1d1d1f" 
+                    color: "var(--foreground)" 
                   }}>
                     {recipe.ingredients.slice(0, 5).map((ing, i) => (
                       <li key={i}>{ing}</li>
@@ -1739,8 +1760,8 @@ export default function Home() {
                       </button>
                       {expanded === index && (
                         <div>
-                          <h4>Directions:</h4>
-                          <p>{recipe.directions.join(' ')}</p>
+                          <h4 style={{ color: "var(--foreground)" }}>Directions:</h4>
+                          <p style={{ color: "var(--foreground)" }}>{recipe.directions.join(' ')}</p>
                         </div>
                 )}
               </div>
