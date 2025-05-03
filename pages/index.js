@@ -60,17 +60,17 @@ export default function Home() {
   };
 
   // Filter recipes based on dietary restrictions
-  const applyDietaryFilters = (recipesToFilter) => {
+  const applyDietaryFilters = (recipesToFilter, filters = dietaryFilters) => {
     if (!recipesToFilter) return [];
     
     return recipesToFilter.filter(recipe => {
       // Filter by vegetarian
-      if (dietaryFilters.vegetarian && containsForbiddenIngredients(recipe, nonVegetarianIngredients)) {
+      if (filters.vegetarian && containsForbiddenIngredients(recipe, nonVegetarianIngredients)) {
         return false;
       }
       
       // Filter by vegan
-      if (dietaryFilters.vegan && (
+      if (filters.vegan && (
         containsForbiddenIngredients(recipe, nonVegetarianIngredients) || 
         containsForbiddenIngredients(recipe, dairyIngredients)
       )) {
@@ -296,6 +296,11 @@ export default function Home() {
       newFilters.vegetarian = true;
     }
     
+    // Instantly apply filters for immediate visual feedback
+    setFilteredRecipes(applyDietaryFilters(recipes, newFilters));
+    setDetectFilteredRecipes(applyDietaryFilters(detectRecipes, newFilters));
+    
+    // Then update the filter state
     setDietaryFilters(newFilters);
   };
 
