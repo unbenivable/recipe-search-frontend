@@ -361,6 +361,122 @@ export default function Home() {
     setDietaryFilters(newFilters);
   };
 
+  // Function to share a recipe
+  const shareRecipe = async (recipe, e) => {
+    e.stopPropagation(); // Prevent expanding the recipe
+    
+    // Ensure the recipe has an ID
+    if (!recipe.id) {
+      recipe = { ...recipe, id: `recipe-${Date.now()}` };
+    }
+    
+    // Store recipes in sessionStorage for retrieval on detail page
+    if (typeof window !== 'undefined') {
+      try {
+        // Get existing stored recipes or initialize an empty array
+        const storedRecipes = sessionStorage.getItem('recipeData') 
+          ? JSON.parse(sessionStorage.getItem('recipeData')) 
+          : [];
+
+        // Add current recipe if it doesn't exist
+        if (!storedRecipes.some(r => r.id === recipe.id)) {
+          storedRecipes.push(recipe);
+          sessionStorage.setItem('recipeData', JSON.stringify(storedRecipes));
+        }
+      } catch (err) {
+        console.error('Error storing recipe data:', err);
+      }
+    }
+    
+    // Create a shareable URL
+    const recipeData = encodeURIComponent(JSON.stringify(recipe));
+    const shareUrl = `${window.location.origin}/recipe/${recipe.id}?data=${recipeData}`;
+    
+    // Try to use the Web Share API if available
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: recipe.title,
+          text: `Check out this recipe for ${recipe.title}!`,
+          url: shareUrl
+        });
+        return;
+      } catch (err) {
+        console.log('Error sharing:', err);
+        // Fall back to clipboard
+      }
+    }
+    
+    // Fallback: Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert('Link copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      // If clipboard API fails, show the URL and ask user to copy manually
+      alert(`Please copy this link manually: ${shareUrl}`);
+    }
+  };
+  
+  // Open recipe in new tab
+  const openRecipeInNewTab = (recipe, e) => {
+    e.stopPropagation(); // Prevent expanding the recipe
+    
+    // Ensure the recipe has an ID
+    if (!recipe.id) {
+      recipe = { ...recipe, id: `recipe-${Date.now()}` };
+    }
+    
+    // Store recipes in sessionStorage for retrieval on detail page
+    if (typeof window !== 'undefined') {
+      try {
+        // Get existing stored recipes or initialize an empty array
+        const storedRecipes = sessionStorage.getItem('recipeData') 
+          ? JSON.parse(sessionStorage.getItem('recipeData')) 
+          : [];
+
+        // Add current recipe if it doesn't exist
+        if (!storedRecipes.some(r => r.id === recipe.id)) {
+          storedRecipes.push(recipe);
+          sessionStorage.setItem('recipeData', JSON.stringify(storedRecipes));
+        }
+        
+        // Open in new tab
+        window.open(`/recipe/${recipe.id}`, '_blank');
+      } catch (err) {
+        console.error('Error storing recipe data:', err);
+      }
+    }
+  };
+
+  // Update the filteredRecipes array to ensure each recipe has an ID
+  useEffect(() => {
+    if (recipes.length > 0) {
+      // Add IDs to recipes if they don't have one
+      const recipesWithIds = recipes.map((recipe, index) => {
+        if (!recipe.id) {
+          return { ...recipe, id: `recipe-${index}-${Date.now()}` };
+        }
+        return recipe;
+      });
+      setRecipes(recipesWithIds);
+    }
+  }, [recipes]);
+
+  // Update the detectFilteredRecipes array to ensure each recipe has an ID
+  useEffect(() => {
+    if (detectRecipes.length > 0) {
+      // Add IDs to recipes if they don't have one
+      const recipesWithIds = detectRecipes.map((recipe, index) => {
+        if (!recipe.id) {
+          return { ...recipe, id: `recipe-${index}-${Date.now()}` };
+        }
+        return recipe;
+      });
+      setDetectRecipes(recipesWithIds);
+    }
+  }, [detectRecipes]);
+
   const RecipeCard = ({ title, ingredients, directions }) => {
     const [expanded, setExpanded] = useState(false);
     const short = directions.slice(0, 300);
@@ -709,16 +825,72 @@ export default function Home() {
                   ":hover": {
                     transform: "translateY(-5px)",
                     boxShadow: "0 8px 16px rgba(0,0,0,0.1)"
-                  }
+                  },
+                  position: "relative"
                 }}
                 className="recipe-card"
               >
+                <div style={{
+                  position: "absolute",
+                  top: "1rem",
+                  right: "1rem",
+                  display: "flex",
+                  gap: "8px"
+                }}>
+                  <button
+                    onClick={(e) => shareRecipe(recipe, e)}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      backgroundColor: "#f5f5f7",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s ease",
+                      padding: 0
+                    }}
+                    aria-label="Share recipe"
+                    title="Share recipe"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="#0071e3"/>
+                    </svg>
+                  </button>
+                  
+                  <button
+                    onClick={(e) => openRecipeInNewTab(recipe, e)}
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      borderRadius: "50%",
+                      backgroundColor: "#f5f5f7",
+                      border: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      transition: "background-color 0.2s ease",
+                      padding: 0
+                    }}
+                    aria-label="Open in new tab"
+                    title="Open in new tab with larger text"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill="#0071e3"/>
+                    </svg>
+                  </button>
+                </div>
+
                 <h3 style={{ 
                   fontSize: "18px", 
                   fontWeight: "600", 
                   marginTop: 0,
                   marginBottom: "1rem",
-                  color: "#1d1d1f"
+                  color: "#1d1d1f",
+                  paddingRight: "70px"
                 }}>
                   {recipe.title}
                 </h3>
@@ -991,13 +1163,95 @@ export default function Home() {
           {detectFilteredRecipes.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
               {detectFilteredRecipes.map((recipe, index) => (
-                <div key={index} style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "1rem", width: "300px" }}>
-                  <h3>{recipe.title}</h3>
-                  <ul>
+                <div 
+                  key={index} 
+                  style={{ 
+                    border: "1px solid #ddd", 
+                    borderRadius: "8px", 
+                    padding: "1rem", 
+                    width: "300px",
+                    position: "relative"
+                  }}
+                >
+                  <div style={{
+                    position: "absolute",
+                    top: "0.75rem",
+                    right: "0.75rem",
+                    display: "flex",
+                    gap: "8px"
+                  }}>
+                    <button
+                      onClick={(e) => shareRecipe(recipe, e)}
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        backgroundColor: "#f5f5f7",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "background-color 0.2s ease",
+                        padding: 0
+                      }}
+                      aria-label="Share recipe"
+                      title="Share recipe"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="#0071e3"/>
+                      </svg>
+                    </button>
+                    
+                    <button
+                      onClick={(e) => openRecipeInNewTab(recipe, e)}
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        backgroundColor: "#f5f5f7",
+                        border: "none",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        cursor: "pointer",
+                        transition: "background-color 0.2s ease",
+                        padding: 0
+                      }}
+                      aria-label="Open in new tab"
+                      title="Open in new tab with larger text"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" fill="#0071e3"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <h3 style={{ 
+                    marginRight: "70px"
+                  }}>
+                    {recipe.title}
+                  </h3>
+
+                  <h4 style={{ 
+                    fontSize: "15px", 
+                    fontWeight: "600", 
+                    color: "#636366",
+                    marginBottom: "0.5rem" 
+                  }}>
+                    Ingredients:
+                  </h4>
+                  
+                  <ul style={{ 
+                    paddingLeft: "1.25rem", 
+                    marginBottom: "1.25rem", 
+                    color: "#1d1d1f" 
+                  }}>
                     {recipe.ingredients.slice(0, 5).map((ing, i) => (
                       <li key={i}>{ing}</li>
                     ))}
                   </ul>
+
                   {recipe.directions && (
                     <div>
                       <button onClick={() => setExpanded(expanded === index ? null : index)}>
