@@ -80,15 +80,16 @@ export default function Home() {
     const lowerRecipeIng = recipeIngredient.toLowerCase();
     const lowerSearchIng = searchIngredient.toLowerCase();
     
-    // Basic contains check (this is a fallback)
+    // For short ingredients (3 chars or less), just use simple contains
+    if (lowerSearchIng.length <= 3) {
+      return lowerRecipeIng.includes(lowerSearchIng);
+    }
+    
+    // Simple contains check (most permissive)
     const simpleContains = lowerRecipeIng.includes(lowerSearchIng);
     
     // Split the recipe ingredient into words
     const words = lowerRecipeIng.split(/\s+|,|;|\(|\)|\/|-/);
-    
-    // Debugging logs
-    console.log(`Checking if '${lowerSearchIng}' matches with '${lowerRecipeIng}'`);
-    console.log(`Words extracted: ${JSON.stringify(words)}`);
     
     // Properly escape the search ingredient for regex
     const escapeRegExp = (string) => {
@@ -111,17 +112,16 @@ export default function Home() {
     const wholeWordPattern = new RegExp(`\\b${escapedSearchIng}\\b`);
     const isWholeWordMatch = wholeWordPattern.test(lowerRecipeIng);
     
-    // Use simpleContains as a fallback for basic ingredients (single word ingredients)
-    const isSimpleIngredient = !lowerSearchIng.includes(' ') && lowerSearchIng.length >= 3;
-    const useSimpleMatch = isSimpleIngredient && simpleContains;
+    // For shorter ingredients (like "egg", "ham", etc), be more permissive
+    const isShortIngredient = lowerSearchIng.length <= 4;
     
-    const hasMatch = isExactMatch || isStartMatch || isEndMatch || isWholeWordMatch || useSimpleMatch;
-    console.log(`Match result: ${hasMatch} (exact: ${isExactMatch}, start: ${isStartMatch}, end: ${isEndMatch}, whole: ${isWholeWordMatch}, simple: ${useSimpleMatch})`);
+    // If it's a short ingredient, accept it if it's contained anywhere
+    const hasMatch = isExactMatch || isStartMatch || isEndMatch || isWholeWordMatch || (isShortIngredient && simpleContains);
     
     return hasMatch;
   };
 
-  // Apply client-side filtering for precise ingredient matching
+  // Apply client-side filtering for flexible ingredient matching
   const filterRecipesByIngredients = (recipes, ingredients) => {
     if (!recipes || !ingredients || ingredients.length === 0) {
       console.log("No recipes or ingredients to filter");
@@ -130,20 +130,32 @@ export default function Home() {
     
     console.log(`Filtering ${recipes.length} recipes with ingredients: ${JSON.stringify(ingredients)}`);
     
+    // If we only have 1-2 ingredients, use more lenient matching (match any)
+    const shouldMatchAll = ingredients.length >= 3;
+    console.log(`Using ${shouldMatchAll ? 'match all' : 'match any'} strategy for ${ingredients.length} ingredients`);
+    
     const filteredRecipes = recipes.filter(recipe => {
-      // Check if all search ingredients are present in the recipe
-      const allIngredientsMatch = ingredients.every(searchIngredient => {
-        // Consider a match if any recipe ingredient matches the search ingredient
-        const hasMatch = recipe.ingredients.some(recipeIngredient => 
-          ingredientMatches(recipeIngredient, searchIngredient)
-        );
+      if (shouldMatchAll) {
+        // Match all ingredients (stricter)
+        const allIngredientsMatch = ingredients.every(searchIngredient => {
+          const hasMatch = recipe.ingredients.some(recipeIng => 
+            ingredientMatches(recipeIng, searchIngredient)
+          );
+          return hasMatch;
+        });
+        return allIngredientsMatch;
+      } else {
+        // Match any ingredient (more lenient)
+        const matchCount = ingredients.filter(searchIngredient => {
+          return recipe.ingredients.some(recipeIng => 
+            ingredientMatches(recipeIng, searchIngredient)
+          );
+        }).length;
         
-        console.log(`Ingredient '${searchIngredient}' ${hasMatch ? 'found' : 'NOT found'} in recipe: ${recipe.title}`);
-        return hasMatch;
-      });
-      
-      console.log(`Recipe '${recipe.title}' ${allIngredientsMatch ? 'MATCHES' : 'does NOT match'} all search criteria`);
-      return allIngredientsMatch;
+        // Require at least one match
+        const hasEnoughMatches = matchCount >= 1;
+        return hasEnoughMatches;
+      }
     });
     
     console.log(`Filtered from ${recipes.length} to ${filteredRecipes.length} recipes`);
@@ -292,8 +304,9 @@ export default function Home() {
         additionalFilters.mealType = mealTypeFilter;
       }
       
-      // Use flexible matching for more results
-      const useStrictMatching = false;
+      // Use flexible matching for fewer ingredients
+      // Set matchAll to false for 1-2 ingredients, true for 3+
+      const useStrictMatching = ingredientsArray.length >= 3;
       
       console.log('API request payload:', { 
         ingredients: ingredientsArray,
@@ -307,7 +320,7 @@ export default function Home() {
         { 
           ingredients: ingredientsArray,
           dietary: activeFilters.length > 0 ? activeFilters : undefined,
-          matchAll: useStrictMatching, // Set to false for more flexible matching
+          matchAll: useStrictMatching, // More flexible matching for fewer ingredients
           ...additionalFilters
         }
       );
@@ -329,7 +342,8 @@ export default function Home() {
         const filterMessage = activeFilters.length > 0 
           ? ` matching your dietary preferences (${activeFilters.join(', ')})`
           : '';
-        setErrorMessage(`No recipes found with these ingredients${filterMessage}. Try different ingredients or filters.`);
+        const matchStrategy = ingredientsArray.length > 2 ? 'all' : 'any';
+        setErrorMessage(`No recipes found with ${matchStrategy} of these ingredients${filterMessage}. Try different ingredients or filters.`);
       }
     } catch (error) {
       console.error('Error fetching recipes:', error);
@@ -1163,6 +1177,9 @@ export default function Home() {
                         setCookingTimeFilter('any');
                         setCuisineFilter('any');
                         setMealTypeFilter('any');
+                        setIngredients(''); // Clear search input
+                        setRecipes([]); // Clear results
+                        setFilteredRecipes([]); // Clear filtered results
                       }}
                       style={{
                         width: "100%",
