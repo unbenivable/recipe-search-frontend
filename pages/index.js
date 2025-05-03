@@ -9,7 +9,7 @@ export default function Home() {
   const [imageQuery, setImageQuery] = useState('');
   const [images, setImages] = useState([]);
   const [imageLoading, setImageLoading] = useState(false);
-  const [searchMode, setSearchMode] = useState('recipe'); // 'recipe', 'image', or 'detect'
+  const [searchMode, setSearchMode] = useState('recipe'); // 'recipe' or 'detect'
   const [errorMessage, setErrorMessage] = useState('');
   const [detectLoading, setDetectLoading] = useState(false);
   const [detectedIngredients, setDetectedIngredients] = useState([]);
@@ -285,23 +285,6 @@ export default function Home() {
           Search by Ingredients
         </button>
         <button 
-          onClick={() => setSearchMode('image')}
-          style={{ 
-            padding: "0.75rem 1rem", 
-            backgroundColor: searchMode === 'image' ? "#ffffff" : "transparent",
-            color: searchMode === 'image' ? "#1d1d1f" : "#1d1d1f",
-            border: "none",
-            fontWeight: searchMode === 'image' ? "600" : "400",
-            fontSize: "15px",
-            flex: 1,
-            borderRadius: "10px",
-            boxShadow: searchMode === 'image' ? "0 2px 8px rgba(0,0,0,0.08)" : "none",
-            transition: "all 0.2s ease"
-          }}
-        >
-          Generate Food Image
-        </button>
-        <button 
           onClick={() => setSearchMode('detect')}
           style={{ 
             padding: "0.75rem 1rem", 
@@ -427,8 +410,9 @@ export default function Home() {
           </div>
 
           <div style={{ 
-            maxWidth: "600px",
-            margin: "0 auto 2.5rem auto",
+            maxWidth: "400px",
+            width: "100%",
+            margin: "0 auto 2rem auto",
             background: "white",
             padding: "1.5rem",
             borderRadius: "16px",
@@ -633,135 +617,6 @@ export default function Home() {
             ))}
           </div>
         </div>
-      ) : searchMode === 'image' ? (
-        <>
-          <p style={{ textAlign: "center", fontSize: "16px", color: "#636366", marginBottom: "1.5rem" }}>
-            Search for food images (e.g. "pancakes with strawberries")
-          </p>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "2rem" }}>
-            <div style={{
-              position: "relative",
-              width: "100%",
-              maxWidth: "400px",
-            }}>
-              <input
-                type="text"
-                value={imageQuery}
-                onChange={(e) => setImageQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    searchImages();
-                  }
-                }}
-                placeholder="e.g. chocolate cake"
-                style={{ 
-                  padding: "0.85rem 1rem", 
-                  paddingRight: "3.5rem",
-                  width: "100%", 
-                  borderRadius: "12px",
-                  border: "none",
-                  fontSize: "16px",
-                  backgroundColor: "white",
-                  color: "#1d1d1f",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
-                  outline: "none",
-                  transition: "all 0.2s ease"
-                }}
-              />
-              <button 
-                onClick={searchImages} 
-                style={{ 
-                  position: "absolute",
-                  right: "8px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  padding: "0.5rem",
-                  width: "36px",
-                  height: "36px",
-                  backgroundColor: "#0071e3",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "50%",
-                  cursor: imageLoading ? "not-allowed" : "pointer",
-                  opacity: imageLoading ? 0.7 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  boxShadow: "0 2px 4px rgba(0,113,227,0.3)",
-                  transition: "all 0.2s ease"
-                }}
-                disabled={imageLoading}
-                aria-label="Search images"
-              >
-                {imageLoading ? (
-                  <span style={{ fontSize: "12px" }}>...</span>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15.5 14H14.71L14.43 13.73C15.41 12.59 16 11.11 16 9.5C16 5.91 13.09 3 9.5 3C5.91 3 3 5.91 3 9.5C3 13.09 5.91 16 9.5 16C11.11 16 12.59 15.41 13.73 14.43L14 14.71V15.5L19 20.49L20.49 19L15.5 14ZM9.5 14C7.01 14 5 11.99 5 9.5C5 7.01 7.01 5 9.5 5C11.99 5 14 7.01 14 9.5C14 11.99 11.99 14 9.5 14Z" fill="white"/>
-                  </svg>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {imageLoading ? (
-            <div style={{ textAlign: "center", padding: "2rem" }}>
-              <p>Generating food images with AI...</p>
-              <div style={{ 
-                width: "40px", 
-                height: "40px", 
-                margin: "0 auto",
-                border: "4px solid #f3f3f3",
-                borderTop: "4px solid #007bff",
-                borderRadius: "50%",
-                animation: "spin 2s linear infinite"
-              }}></div>
-              <style jsx>{`
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              `}</style>
-            </div>
-          ) : (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              {images.length > 0 ? (
-                <div 
-                  style={{ 
-                    width: "400px", 
-                    height: "400px", 
-                    overflow: "hidden", 
-                    borderRadius: "12px",
-                    boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
-                    transition: "transform 0.3s ease",
-                    cursor: "pointer"
-                  }}
-                >
-                  <img 
-                    src={images[0]?.url} 
-                    alt={images[0]?.alt || "Generated food image"} 
-                    style={{ 
-                      width: "100%", 
-                      height: "100%", 
-                      objectFit: "cover" 
-                    }}
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = "https://via.placeholder.com/400x400?text=Image+Error";
-                    }}
-                  />
-                </div>
-              ) : (
-                !imageLoading && !errorMessage && (
-                  <p style={{ textAlign: "center", padding: "2rem" }}>
-                    Search for food images to see results here
-                  </p>
-                )
-              )}
-            </div>
-          )}
-        </>
       ) : (
         <>
           <p style={{ textAlign: "center" }}>
@@ -877,7 +732,7 @@ export default function Home() {
             <div style={{ 
               maxWidth: "400px",
               width: "100%",
-              margin: "1rem auto",
+              margin: "0 auto 2rem auto",
               background: "white",
               padding: "1.5rem",
               borderRadius: "16px",
