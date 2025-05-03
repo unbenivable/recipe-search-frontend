@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 export default function Home() {
   const [ingredients, setIngredients] = useState('');
   const [recipes, setRecipes] = useState([]);
+  const [filteredRecipes, setFilteredRecipes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(null);
   const [imageQuery, setImageQuery] = useState('');
@@ -16,8 +17,11 @@ export default function Home() {
   const [detectedIngredients, setDetectedIngredients] = useState([]);
   const [detectImage, setDetectImage] = useState(null);
   const [detectRecipes, setDetectRecipes] = useState([]);
+  const [detectFilteredRecipes, setDetectFilteredRecipes] = useState([]);
   const [detectError, setDetectError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [showDietaryDropdown, setShowDietaryDropdown] = useState(false);
+  const dietaryDropdownRef = useRef(null);
   const [dietaryFilters, setDietaryFilters] = useState({
     vegetarian: false,
     vegan: false,
@@ -25,6 +29,59 @@ export default function Home() {
     dairyFree: false,
     lowCarb: false
   });
+
+  // Add lists for non-vegan/vegetarian ingredients to filter out
+  const meatIngredients = [
+    'beef', 'pork', 'lamb', 'chicken', 'turkey', 'bacon', 'ham', 'sausage', 
+    'veal', 'venison', 'duck', 'goose', 'meat', 'steak', 'ribs', 'brisket',
+    'prosciutto', 'salami', 'pepperoni', 'jerky', 'hamburger'
+  ];
+
+  const nonVegetarianIngredients = [
+    ...meatIngredients, 'fish', 'salmon', 'tuna', 'shrimp', 'crab', 'lobster', 
+    'clam', 'mussel', 'oyster', 'scallop', 'seafood', 'anchovy', 'caviar', 
+    'squid', 'octopus', 'gelatin'
+  ];
+
+  const dairyIngredients = [
+    'milk', 'cheese', 'butter', 'cream', 'yogurt', 'dairy', 'whey',
+    'lactose', 'parmesan', 'mozzarella', 'cheddar', 'ice cream'
+  ];
+
+  // Function to check if a recipe contains forbidden ingredients
+  const containsForbiddenIngredients = (recipe, forbiddenList) => {
+    // Check if any ingredient in the recipe contains a forbidden ingredient
+    return recipe.ingredients.some(ingredient => {
+      const lowerIngredient = ingredient.toLowerCase();
+      return forbiddenList.some(forbidden => 
+        lowerIngredient.includes(forbidden.toLowerCase())
+      );
+    });
+  };
+
+  // Filter recipes based on dietary restrictions
+  const applyDietaryFilters = (recipesToFilter) => {
+    if (!recipesToFilter) return [];
+    
+    return recipesToFilter.filter(recipe => {
+      // Filter by vegetarian
+      if (dietaryFilters.vegetarian && containsForbiddenIngredients(recipe, nonVegetarianIngredients)) {
+        return false;
+      }
+      
+      // Filter by vegan
+      if (dietaryFilters.vegan && (
+        containsForbiddenIngredients(recipe, nonVegetarianIngredients) || 
+        containsForbiddenIngredients(recipe, dairyIngredients)
+      )) {
+        return false;
+      }
+      
+      // Add other filters here if needed
+      
+      return true;
+    });
+  };
 
   // Detect if mobile on client side
   useEffect(() => {
@@ -37,6 +94,30 @@ export default function Home() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dietaryDropdownRef.current && !dietaryDropdownRef.current.contains(event.target)) {
+        setShowDietaryDropdown(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dietaryDropdownRef]);
+  
+  // Apply dietary filters when recipes or filters change
+  useEffect(() => {
+    setFilteredRecipes(applyDietaryFilters(recipes));
+  }, [recipes, dietaryFilters]);
+  
+  // Apply dietary filters to detected recipes
+  useEffect(() => {
+    setDetectFilteredRecipes(applyDietaryFilters(detectRecipes));
+  }, [detectRecipes, dietaryFilters]);
 
   // Log the backend URL for debugging
   console.log('Backend URL:', process.env.NEXT_PUBLIC_BACKEND_URL);
@@ -205,10 +286,17 @@ export default function Home() {
 
   // Handler for toggling dietary filters
   const toggleDietaryFilter = (filter) => {
-    setDietaryFilters({
+    const newFilters = {
       ...dietaryFilters,
       [filter]: !dietaryFilters[filter]
-    });
+    };
+    
+    // If vegan is turned on, automatically turn on vegetarian too
+    if (filter === 'vegan' && !dietaryFilters.vegan) {
+      newFilters.vegetarian = true;
+    }
+    
+    setDietaryFilters(newFilters);
   };
 
   const RecipeCard = ({ title, ingredients, directions }) => {
@@ -408,99 +496,130 @@ export default function Home() {
                 )}
               </button>
             </div>
-          </div>
-
-          <div style={{ 
-            maxWidth: "400px",
-            width: "100%",
-            margin: "0 auto 2rem auto",
-            background: "white",
-            padding: "1.5rem",
-            borderRadius: "16px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-          }}>
-            <div style={{ 
-              borderBottom: "1px solid #f2f2f7", 
-              paddingBottom: "0.75rem", 
-              marginBottom: "1rem" 
-            }}>
-              <h3 style={{ 
-                fontSize: "17px", 
-                fontWeight: "600", 
-                color: "#1d1d1f", 
-                margin: 0 
-              }}>
-                Dietary Preferences
-              </h3>
-            </div>
-            
-            {Object.entries(dietaryFilters).map(([filter, isActive]) => (
-              <div key={filter} style={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center",
-                padding: "0.5rem 0",
-                borderBottom: "1px solid #f2f2f7"
-              }}>
-                <span style={{ fontSize: "16px", color: "#1d1d1f" }}>
-                  {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                </span>
-                
-                <div
-                  onClick={() => toggleDietaryFilter(filter)}
-                  style={{
-                    width: "51px",
-                    height: "31px",
-                    backgroundColor: isActive ? "#34c759" : "#d1d1d6",
-                    borderRadius: "15.5px",
-                    padding: "2px",
-                    position: "relative",
-                    transition: "background-color 0.2s ease",
-                    cursor: "pointer"
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "27px",
-                      height: "27px",
-                      backgroundColor: "white",
-                      borderRadius: "50%",
-                      position: "absolute",
-                      top: "2px",
-                      left: isActive ? "22px" : "2px",
-                      transition: "left 0.2s ease",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-            
-            {Object.values(dietaryFilters).some(v => v) && (
+            <div style={{ position: "relative", zIndex: 10 }} ref={dietaryDropdownRef}>
               <button
-                onClick={() => setDietaryFilters({
-                  vegetarian: false,
-                  vegan: false,
-                  glutenFree: false,
-                  dairyFree: false,
-                  lowCarb: false
-                })}
-                style={{
-                  width: "100%",
-                  padding: "0.6rem",
-                  marginTop: "1rem",
-                  backgroundColor: "transparent",
-                  color: "#0071e3",
+                onClick={() => setShowDietaryDropdown(!showDietaryDropdown)}
+                style={{ 
+                  padding: "0.85rem 1rem",
+                  backgroundColor: "white",
+                  color: Object.values(dietaryFilters).some(v => v) ? "#34c759" : "#0071e3",
                   border: "none",
-                  borderRadius: "10px",
-                  fontSize: "15px",
+                  borderRadius: "12px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  fontSize: "16px",
                   fontWeight: "500",
-                  cursor: "pointer"
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                  transition: "all 0.2s ease",
+                  whiteSpace: "nowrap"
                 }}
               >
-                Reset All Filters
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 9L20 16H4L12 9Z" fill={Object.values(dietaryFilters).some(v => v) ? "#34c759" : "#0071e3"} />
+                </svg>
+                <span>Dietary</span>
               </button>
-            )}
+              
+              {showDietaryDropdown && (
+                <div style={{
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  width: "220px",
+                  background: "white",
+                  borderRadius: "12px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  padding: "1rem",
+                  zIndex: 20
+                }}>
+                  <div style={{ 
+                    borderBottom: "1px solid #f2f2f7", 
+                    paddingBottom: "0.75rem", 
+                    marginBottom: "1rem" 
+                  }}>
+                    <h3 style={{ 
+                      fontSize: "16px", 
+                      fontWeight: "600", 
+                      color: "#1d1d1f", 
+                      margin: 0 
+                    }}>
+                      Dietary Preferences
+                    </h3>
+                  </div>
+                  
+                  {Object.entries(dietaryFilters).map(([filter, isActive]) => (
+                    <div key={filter} style={{ 
+                      display: "flex", 
+                      justifyContent: "space-between", 
+                      alignItems: "center",
+                      padding: "0.5rem 0",
+                      borderBottom: "1px solid #f2f2f7"
+                    }}>
+                      <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                        {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                      </span>
+                      
+                      <div
+                        onClick={() => toggleDietaryFilter(filter)}
+                        style={{
+                          width: "40px",
+                          height: "24px",
+                          backgroundColor: isActive ? "#34c759" : "#d1d1d6",
+                          borderRadius: "12px",
+                          padding: "2px",
+                          position: "relative",
+                          transition: "background-color 0.2s ease",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                            backgroundColor: "white",
+                            borderRadius: "50%",
+                            position: "absolute",
+                            top: "2px",
+                            left: isActive ? "18px" : "2px",
+                            transition: "left 0.2s ease",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {Object.values(dietaryFilters).some(v => v) && (
+                    <button
+                      onClick={() => setDietaryFilters({
+                        vegetarian: false,
+                        vegan: false,
+                        glutenFree: false,
+                        dairyFree: false,
+                        lowCarb: false
+                      })}
+                      style={{
+                        width: "100%",
+                        padding: "0.6rem",
+                        marginTop: "0.75rem",
+                        backgroundColor: "transparent",
+                        color: "#0071e3",
+                        border: "none",
+                        borderRadius: "10px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        cursor: "pointer"
+                      }}
+                    >
+                      Reset All Filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div style={{ 
@@ -509,7 +628,7 @@ export default function Home() {
             gap: "1.5rem", 
             justifyContent: "center" 
           }}>
-            {recipes.map((recipe, index) => (
+            {filteredRecipes.map((recipe, index) => (
               <div 
                 key={index} 
                 style={{ 
@@ -665,7 +784,7 @@ export default function Home() {
                   }}
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: "8px" }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z" fill="#0071e3"/>
+                    <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-8 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" fill="#0071e3"/>
                   </svg>
                   <span>Select Image</span>
                   <input 
@@ -740,100 +859,6 @@ export default function Home() {
               )}
             </div>
             
-            {/* Dietary Preferences */}
-            <div style={{ 
-              maxWidth: "400px",
-              width: "100%",
-              margin: "0 auto 2rem auto",
-              background: "white",
-              padding: "1.5rem",
-              borderRadius: "16px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-            }}>
-              <div style={{ 
-                borderBottom: "1px solid #f2f2f7", 
-                paddingBottom: "0.75rem", 
-                marginBottom: "1rem" 
-              }}>
-                <h3 style={{ 
-                  fontSize: "17px", 
-                  fontWeight: "600", 
-                  color: "#1d1d1f", 
-                  margin: 0 
-                }}>
-                  Dietary Preferences
-                </h3>
-              </div>
-              
-              {Object.entries(dietaryFilters).map(([filter, isActive]) => (
-                <div key={filter} style={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: "center",
-                  padding: "0.5rem 0",
-                  borderBottom: "1px solid #f2f2f7"
-                }}>
-                  <span style={{ fontSize: "16px", color: "#1d1d1f" }}>
-                    {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                  </span>
-                  
-                  <div
-                    onClick={() => toggleDietaryFilter(filter)}
-                    style={{
-                      width: "51px",
-                      height: "31px",
-                      backgroundColor: isActive ? "#34c759" : "#d1d1d6",
-                      borderRadius: "15.5px",
-                      padding: "2px",
-                      position: "relative",
-                      transition: "background-color 0.2s ease",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "27px",
-                        height: "27px",
-                        backgroundColor: "white",
-                        borderRadius: "50%",
-                        position: "absolute",
-                        top: "2px",
-                        left: isActive ? "22px" : "2px",
-                        transition: "left 0.2s ease",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              
-              {Object.values(dietaryFilters).some(v => v) && (
-                <button
-                  onClick={() => setDietaryFilters({
-                    vegetarian: false,
-                    vegan: false,
-                    glutenFree: false,
-                    dairyFree: false,
-                    lowCarb: false
-                  })}
-                  style={{
-                    width: "100%",
-                    padding: "0.6rem",
-                    marginTop: "1rem",
-                    backgroundColor: "transparent",
-                    color: "#0071e3",
-                    border: "none",
-                    borderRadius: "10px",
-                    fontSize: "15px",
-                    fontWeight: "500",
-                    cursor: "pointer"
-                  }}
-                >
-                  Reset All Filters
-                </button>
-              )}
-            </div>
-            
             <button 
               type="submit"
               style={{ 
@@ -888,9 +913,9 @@ export default function Home() {
               </div>
             </div>
           )}
-          {detectRecipes.length > 0 && (
+          {detectFilteredRecipes.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-              {detectRecipes.map((recipe, index) => (
+              {detectFilteredRecipes.map((recipe, index) => (
                 <div key={index} style={{ border: "1px solid #ddd", borderRadius: "8px", padding: "1rem", width: "300px" }}>
                   <h3>{recipe.title}</h3>
                   <ul>
