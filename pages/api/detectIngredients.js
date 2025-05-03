@@ -8,34 +8,12 @@ export const config = {
   },
 };
 
-// Specific food ingredients we want to prioritize
-const specificIngredients = [
-  // Proteins
-  'chicken', 'beef', 'pork', 'salmon', 'tuna', 'shrimp', 'tofu', 'egg', 'beans',
-  'turkey', 'lamb', 'crab', 'lobster', 'scallop', 'bacon', 'ham', 'sausage',
-  // Vegetables
-  'lettuce', 'spinach', 'kale', 'carrot', 'potato', 'onion', 'garlic', 'tomato', 'cucumber',
-  'broccoli', 'cauliflower', 'bell pepper', 'zucchini', 'eggplant', 'mushroom', 'asparagus',
-  'corn', 'green beans', 'peas', 'leek', 'celery', 'cabbage', 'brussels sprouts',
-  // Fruits
-  'apple', 'banana', 'orange', 'grape', 'strawberry', 'blueberry', 'raspberry', 'lemon',
-  'lime', 'avocado', 'peach', 'pear', 'pineapple', 'mango', 'watermelon', 'kiwi',
-  // Grains & Pasta
-  'rice', 'pasta', 'bread', 'cereal', 'oats', 'wheat', 'flour', 'quinoa', 'barley',
-  'mac', 'macaroni', 'spaghetti', 'noodle', 'penne', 'fettuccine', 'ramen',
-  // Dairy
-  'milk', 'cheese', 'yogurt', 'butter', 'cream', 'sour cream', 'parmesan',
-  // Specific ingredients (not categories)
-  'sugar', 'salt', 'pepper', 'olive oil', 'vinegar', 'honey', 'chocolate', 'basil', 'oregano',
-  'cilantro', 'thyme', 'rosemary', 'mint', 'ginger', 'cinnamon', 'cumin'
-];
-
 // Generic food categories or terms to filter out
 const genericFoodTerms = [
   'food', 'ingredient', 'vegetable', 'fruit', 'meat', 'dairy', 'grain', 'herb', 'spice',
   'dish', 'meal', 'cuisine', 'recipe', 'breakfast', 'lunch', 'dinner', 'snack',
   'seafood', 'produce', 'sauce', 'syrup', 'dessert', 'baked good', 'appetizer',
-  'side dish', 'beverage', 'ice cream', 'seed', 'nut'
+  'side dish', 'beverage', 'ice cream', 'seed', 'nut', 'object'
 ];
 
 export default async function handler(req, res) {
@@ -95,7 +73,7 @@ export default async function handler(req, res) {
               {
                 image: { content: imageBase64 },
                 features: [
-                  { type: 'LABEL_DETECTION', maxResults: 30 } // Get enough labels to find specific ingredients
+                  { type: 'LABEL_DETECTION', maxResults: 50 } // Get more labels to find varied ingredients
                 ]
               }
             ]
@@ -114,57 +92,93 @@ export default async function handler(req, res) {
       // Get all labels with their confidence scores
       const allLabelsWithScores = data.responses?.[0]?.labelAnnotations || [];
       const allLabels = allLabelsWithScores
-        .filter(label => label.score >= 0.75) // Only consider high-confidence labels
+        .filter(label => label.score >= 0.7) // Lower threshold to catch more ingredients
         .map(label => ({ 
-          name: label.description,
+          name: label.description.toLowerCase(),
           score: label.score
         }));
       
       console.log('Detected labels:', allLabels);
       
-      // First pass: Find specific ingredients (highest priority)
-      let ingredientResults = allLabels
-        .filter(label => 
-          specificIngredients.some(ingredient => 
-            label.name.toLowerCase() === ingredient || 
-            label.name.toLowerCase().includes(ingredient)
-          )
-        )
-        .sort((a, b) => b.score - a.score) // Sort by confidence score
-        .slice(0, 5) // Limit to top 5 specific ingredients
-        .map(label => label.name);
-      
-      // Second pass: If we didn't find enough specific ingredients, try to extract from the remaining labels
-      // But avoid generic terms
-      if (ingredientResults.length < 2) {
-        const remainingLabels = allLabels
-          .filter(label => {
-            const lowerName = label.name.toLowerCase();
-            // Filter out generic terms
-            if (genericFoodTerms.some(term => lowerName === term || lowerName.includes(term))) {
-              return false;
-            }
-            // Don't include labels we already added
-            if (ingredientResults.some(ingredient => ingredient.toLowerCase() === lowerName)) {
-              return false;
-            }
-            return true;
-          })
-          .slice(0, 3) // Take up to 3 more
-          .map(label => label.name);
+      // Function to check if an ingredient is a variant of another
+      const isVariantOf = (ingredient, otherIngredient) => {
+        // Clean and normalize both strings
+        const cleanIngredient = ingredient.trim().toLowerCase();
+        const cleanOther = otherIngredient.trim().toLowerCase();
         
-        ingredientResults = [...ingredientResults, ...remainingLabels].slice(0, 5);
-      }
+        // Check for exact inclusion
+        if (cleanIngredient.includes(cleanOther) || cleanOther.includes(cleanIngredient)) {
+          return true;
+        }
+        
+        // Split multi-word ingredients
+        const words1 = cleanIngredient.split(/\s+/);
+        const words2 = cleanOther.split(/\s+/);
+        
+        // Check if the main word (usually the last word) is the same
+        if (words1.length > 0 && words2.length > 0 && 
+            words1[words1.length - 1] === words2[words2.length - 1]) {
+          return true;
+        }
+        
+        return false;
+      };
+      
+      // Process and filter labels to find food ingredients
+      const processedLabels = allLabels
+        .filter(label => {
+          // Filter out generic terms
+          if (genericFoodTerms.some(term => 
+              label.name === term || 
+              label.name.includes(term) || 
+              term.includes(label.name))) {
+            return false;
+          }
+          return true;
+        })
+        .sort((a, b) => b.score - a.score); // Sort by confidence score
+      
+      // Extract unique ingredients while avoiding duplicates/variants
+      let uniqueIngredients = [];
+      processedLabels.forEach(label => {
+        // Check if this is a real food ingredient (basic check)
+        const isLikelyFood = 
+          !label.name.includes("dish") && 
+          !label.name.includes("cuisine") && 
+          !label.name.includes("product") && 
+          !label.name.includes("setting");
+        
+        if (isLikelyFood) {
+          // Check if it's a variant of an ingredient we already have
+          const isVariant = uniqueIngredients.some(existing => 
+            isVariantOf(existing, label.name)
+          );
+          
+          // Only add if it's not a variant
+          if (!isVariant) {
+            // Capitalize first letter of each word for consistency
+            const formattedName = label.name
+              .split(' ')
+              .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+              .join(' ');
+              
+            uniqueIngredients.push(formattedName);
+          }
+        }
+      });
+      
+      // Keep only a reasonable number of ingredients
+      uniqueIngredients = uniqueIngredients.slice(0, 10);
       
       // If no food ingredients found, return a helpful message
-      if (ingredientResults.length === 0) {
+      if (uniqueIngredients.length === 0) {
         return res.status(200).json({ 
           ingredients: [], 
-          message: 'No specific food ingredients detected. Try uploading a clearer image of individual food items.'
+          message: 'No food ingredients detected. Try uploading a clearer image of food items.'
         });
       }
       
-      return res.status(200).json({ ingredients: ingredientResults });
+      return res.status(200).json({ ingredients: uniqueIngredients });
     });
   } catch (error) {
     console.error('Error detecting ingredients:', error);
