@@ -1,28 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/pages/api-reference/create-next-app).
+# Recipe Search Frontend
 
-## Getting Started
+A Next.js application that allows users to search for recipes by ingredients and food images using Vertex AI.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Search for recipes by ingredients
+- Search for food images using Google's Vertex AI
+- Responsive UI
+
+## Setup
+
+1. Clone the repository
+2. Run `npm install` to install dependencies
+3. Set up environment variables:
+
+Create a `.env.local` file in the root of your project with the following variables:
+
+```
+GOOGLE_CLOUD_API_KEY=your-google-cloud-api-key
+GOOGLE_CLOUD_PROJECT_ID=your-google-cloud-project-id
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+These will be automatically loaded by Next.js.
 
-You can start editing the page by modifying `pages/index.js`. The page auto-updates as you edit the file.
+## Google Cloud / Vertex AI Setup
 
-[API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.js`.
+1. Go to the Google Cloud Console and create a new project
+2. Enable the Vertex AI API for your project
+3. Create API credentials and get your API key
+4. Store the API key in Railway's environment variables as `GOOGLE_CLOUD_API_KEY`
+5. Store your Google Cloud project ID in Railway's environment variables as `GOOGLE_CLOUD_PROJECT_ID`
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/pages/building-your-application/routing/api-routes) instead of React pages.
+## Development
 
-This project uses [`next/font`](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+
+## Deployment
+
+Deploy the application to Railway:
+
+1. Connect your GitHub repository to Railway
+2. Set the required environment variables in Railway's dashboard
+3. Deploy the application
+
+## API Endpoints
+
+- `/api/imageSearch` - POST endpoint for searching images using Vertex AI
+
+## Technologies Used
+
+- Next.js
+- React
+- Vertex AI
+- Axios
 
 ## Learn More
 
