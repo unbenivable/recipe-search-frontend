@@ -236,6 +236,7 @@ export default function Home() {
         ...recipe,
         matchScore: matchCount,
         matchDetails: matchDetails,
+        searchIngredients: searchIngredients, // Store the search ingredients
         matchPercentage: (matchCount / searchIngredients.length) * 100
       };
     })
@@ -1352,7 +1353,7 @@ export default function Home() {
                       }}/>
                     </div>
                     <span style={{ color: "#8e8e93", whiteSpace: "nowrap" }}>
-                      {recipe.matchScore} out of {ingredientsArray?.length || 2} ingredients
+                      {recipe.matchScore} out of {recipe.searchIngredients?.length || recipe.matchDetails?.length || recipe.matchScore || 2} ingredients
                     </span>
                   </div>
                 )}
