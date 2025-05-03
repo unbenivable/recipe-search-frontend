@@ -16,7 +16,7 @@ export default function ThemeSwitcher() {
   }
 
   return (
-    <div className="fixed top-4 right-4 z-50">
+    <div className="inline-block">
       <button
         onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 export default function Home() {
   const [ingredients, setIngredients] = useState('');
@@ -924,7 +925,11 @@ export default function Home() {
         color: "#8e8e93",
         fontSize: "14px"
       }}>
-        <p>Niv & Gal © 2025</p>
+        <p style={{ marginBottom: "0.75rem" }}>Niv & Gal © 2025</p>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ fontSize: "13px" }}>Dark mode:</span>
+          <ThemeSwitcher />
+        </div>
       </footer>
     </div>
   );
