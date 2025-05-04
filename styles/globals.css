@@ -10,6 +10,11 @@
   --success: #34c759;
   --input-text: #1d1d1f;
   --input-bg: #ffffff;
+  --filter-divider: #f2f2f7;
+  --filter-option-bg: rgba(0,113,227,0.1);
+  --filter-option-text: #0071e3;
+  --filter-option-active: #0071e3;
+  --filter-option-inactive: #d1d1d6;
 }
 
 [data-theme="dark"] {
@@ -24,6 +29,11 @@
   --success: #30d158;
   --input-text: #e1e1e6;
   --input-bg: #21262d;
+  --filter-divider: #2d333b;
+  --filter-option-bg: rgba(88,166,255,0.1);
+  --filter-option-text: #58a6ff;
+  --filter-option-active: #58a6ff;
+  --filter-option-inactive: #30363d;
 }
 
 .dark {
@@ -38,6 +48,11 @@
   --success: #30d158;
   --input-text: #e1e1e6;
   --input-bg: #21262d;
+  --filter-divider: #2d333b;
+  --filter-option-bg: rgba(88,166,255,0.1);
+  --filter-option-text: #58a6ff;
+  --filter-option-active: #58a6ff;
+  --filter-option-inactive: #30363d;
 }
 
 html,
@@ -125,9 +140,130 @@ a {
   background: linear-gradient(to right, rgba(200,200,200,0), rgba(200,200,200,0.8) 50%, rgba(200,200,200,0));
 }
 
+/* Filter dropdown styling */
+.filter-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  padding: 1rem;
+  z-index: 20;
+}
+
+.filter-section {
+  margin-bottom: 1rem;
+}
+
+.filter-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0 0 0.75rem 0;
+}
+
+.filter-divider {
+  border-bottom: 1px solid var(--filter-divider);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filter-option:hover {
+  background-color: var(--filter-option-bg);
+}
+
+.filter-option-selected {
+  background-color: var(--filter-option-bg);
+}
+
+.filter-option-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--filter-option-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-option-radio-inner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--filter-option-text);
+}
+
+.filter-option-label {
+  font-size: 14px;
+  color: var(--foreground);
+}
+
+.filter-toggle {
+  width: 40px;
+  height: 24px;
+  background-color: var(--filter-option-inactive);
+  border-radius: 12px;
+  padding: 2px;
+  position: relative;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.filter-toggle-active {
+  background-color: var(--success);
+}
+
+.filter-toggle-knob {
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  transition: left 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.filter-reset-button {
+  width: 100%;
+  padding: 0.6rem;
+  margin-top: 0.75rem;
+  background-color: transparent;
+  color: var(--primary);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 /* Dark mode text and UI overrides */
 .dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span, .dark li {
   color: var(--foreground);
+}
+
+.dark .filter-option-label {
+  color: var(--foreground);
+}
+
+.dark .filter-heading {
+  color: var(--foreground);
+}
+
+.dark .filter-divider {
+  border-color: var(--filter-divider);
 }
 
 .dark input, 

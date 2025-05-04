@@ -1021,93 +1021,40 @@ export default function Home() {
               </button>
               
               {showDietaryDropdown && (
-                <div style={{
-                  position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: 0,
-                  width: "220px",
-                  background: "var(--card-bg)",
-                  borderRadius: "12px",
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  padding: "1rem",
-                  zIndex: 20
-                }}>
-                  <div style={{ 
-                    borderBottom: "1px solid #f2f2f7", 
-                    paddingBottom: "0.75rem", 
-                    marginBottom: "1rem" 
-                  }}>
-                    <h3 style={{ 
-                      fontSize: "16px", 
-                      fontWeight: "600", 
-                      color: "var(--foreground)", 
-                      margin: 0 
-                    }}>
+                <div className="filter-dropdown">
+                  <div className="filter-section filter-divider">
+                    <h3 className="filter-heading">
                       Dietary Preferences
                     </h3>
+                  
+                    {Object.entries(dietaryFilters).map(([filter, isActive]) => (
+                      <div key={filter} className="filter-option filter-divider">
+                        <span className="filter-option-label">
+                          {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        </span>
+                        
+                        <div
+                          onClick={() => toggleDietaryFilter(filter)}
+                          className={`filter-toggle ${isActive ? 'filter-toggle-active' : ''}`}
+                        >
+                          <div
+                            className="filter-toggle-knob"
+                            style={{
+                              left: isActive ? "18px" : "2px"
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   
-                  {Object.entries(dietaryFilters).map(([filter, isActive]) => (
-                    <div key={filter} style={{ 
-                      display: "flex", 
-                      justifyContent: "space-between", 
-                      alignItems: "center",
-                      padding: "0.5rem 0",
-                      borderBottom: "1px solid #f2f2f7"
-                    }}>
-                      <span style={{ fontSize: "14px", color: "var(--foreground)" }}>
-                        {filter.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </span>
-                      
-                      <div
-                        onClick={() => toggleDietaryFilter(filter)}
-                        style={{
-                          width: "40px",
-                          height: "24px",
-                          backgroundColor: isActive ? "#34c759" : "#d1d1d6",
-                          borderRadius: "12px",
-                          padding: "2px",
-                          position: "relative",
-                          transition: "background-color 0.2s ease",
-                          cursor: "pointer"
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "20px",
-                            height: "20px",
-                            backgroundColor: "white",
-                            borderRadius: "50%",
-                            position: "absolute",
-                            top: "2px",
-                            left: isActive ? "18px" : "2px",
-                            transition: "left 0.2s ease",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.2)"
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                  
                   {/* Cooking Time Filter */}
-                  <div style={{ 
-                    borderTop: "1px solid #f2f2f7",
-                    borderBottom: "1px solid #f2f2f7", 
-                    paddingTop: "1rem",
-                    paddingBottom: "0.75rem", 
-                    marginTop: "1rem",
-                    marginBottom: "0.75rem" 
-                  }}>
-                    <h3 style={{ 
-                      fontSize: "16px", 
-                      fontWeight: "600", 
-                      color: "var(--foreground)", 
-                      margin: "0 0 0.75rem 0" 
-                    }}>
+                  <div className="filter-section filter-divider">
+                    <h3 className="filter-heading">
                       Cooking Time (Est.)
                     </h3>
                     
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div className="filter-options-group">
                       {[
                         { value: 'any', label: 'Any Time' },
                         { value: 'under15', label: 'Under 15 Minutes' },
@@ -1117,36 +1064,14 @@ export default function Home() {
                         <div 
                           key={option.value}
                           onClick={() => setCookingTimeFilter(option.value)}
-                          style={{ 
-                            display: "flex", 
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "6px",
-                            backgroundColor: cookingTimeFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s ease"
-                          }}
+                          className={`filter-option ${cookingTimeFilter === option.value ? 'filter-option-selected' : ''}`}
                         >
-                          <div style={{
-                            width: "16px",
-                            height: "16px",
-                            borderRadius: "50%",
-                            border: "2px solid #0071e3",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
+                          <div className="filter-option-radio">
                             {cookingTimeFilter === option.value && (
-                              <div style={{
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                backgroundColor: "#0071e3"
-                              }} />
+                              <div className="filter-option-radio-inner" />
                             )}
                           </div>
-                          <span style={{ fontSize: "14px", color: "var(--foreground)" }}>
+                          <span className="filter-option-label">
                             {option.label}
                           </span>
                         </div>
@@ -1155,21 +1080,12 @@ export default function Home() {
                   </div>
                   
                   {/* Cuisine Type Filter */}
-                  <div style={{ 
-                    borderBottom: "1px solid #f2f2f7", 
-                    paddingBottom: "0.75rem", 
-                    marginBottom: "0.75rem" 
-                  }}>
-                    <h3 style={{ 
-                      fontSize: "16px", 
-                      fontWeight: "600", 
-                      color: "var(--foreground)", 
-                      margin: "0 0 0.75rem 0" 
-                    }}>
+                  <div className="filter-section filter-divider">
+                    <h3 className="filter-heading">
                       Cuisine Type
                     </h3>
                     
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div className="filter-options-group">
                       {[
                         { value: 'any', label: 'Any Cuisine' },
                         { value: 'italian', label: 'Italian' },
@@ -1181,36 +1097,14 @@ export default function Home() {
                         <div 
                           key={option.value}
                           onClick={() => setCuisineFilter(option.value)}
-                          style={{ 
-                            display: "flex", 
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "6px",
-                            backgroundColor: cuisineFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s ease"
-                          }}
+                          className={`filter-option ${cuisineFilter === option.value ? 'filter-option-selected' : ''}`}
                         >
-                          <div style={{
-                            width: "16px",
-                            height: "16px",
-                            borderRadius: "50%",
-                            border: "2px solid #0071e3",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
+                          <div className="filter-option-radio">
                             {cuisineFilter === option.value && (
-                              <div style={{
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                backgroundColor: "#0071e3"
-                              }} />
+                              <div className="filter-option-radio-inner" />
                             )}
                           </div>
-                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                          <span className="filter-option-label">
                             {option.label}
                           </span>
                         </div>
@@ -1219,20 +1113,12 @@ export default function Home() {
                   </div>
                   
                   {/* Meal Type Filter */}
-                  <div style={{ 
-                    paddingBottom: "0.75rem", 
-                    marginBottom: "0.75rem" 
-                  }}>
-                    <h3 style={{ 
-                      fontSize: "16px", 
-                      fontWeight: "600", 
-                      color: "#1d1d1f", 
-                      margin: "0 0 0.75rem 0" 
-                    }}>
+                  <div className="filter-section">
+                    <h3 className="filter-heading">
                       Meal Type
                     </h3>
                     
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div className="filter-options-group">
                       {[
                         { value: 'any', label: 'Any Meal' },
                         { value: 'breakfast', label: 'Breakfast' },
@@ -1244,36 +1130,14 @@ export default function Home() {
                         <div 
                           key={option.value}
                           onClick={() => setMealTypeFilter(option.value)}
-                          style={{ 
-                            display: "flex", 
-                            alignItems: "center",
-                            gap: "0.5rem",
-                            padding: "0.25rem 0.5rem",
-                            borderRadius: "6px",
-                            backgroundColor: mealTypeFilter === option.value ? "rgba(0,113,227,0.1)" : "transparent",
-                            cursor: "pointer",
-                            transition: "background-color 0.2s ease"
-                          }}
+                          className={`filter-option ${mealTypeFilter === option.value ? 'filter-option-selected' : ''}`}
                         >
-                          <div style={{
-                            width: "16px",
-                            height: "16px",
-                            borderRadius: "50%",
-                            border: "2px solid #0071e3",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center"
-                          }}>
+                          <div className="filter-option-radio">
                             {mealTypeFilter === option.value && (
-                              <div style={{
-                                width: "8px",
-                                height: "8px",
-                                borderRadius: "50%",
-                                backgroundColor: "#0071e3"
-                              }} />
+                              <div className="filter-option-radio-inner" />
                             )}
                           </div>
-                          <span style={{ fontSize: "14px", color: "#1d1d1f" }}>
+                          <span className="filter-option-label">
                             {option.label}
                           </span>
                         </div>
@@ -1301,18 +1165,7 @@ export default function Home() {
                         setRecipes([]); // Clear results
                         setFilteredRecipes([]); // Clear filtered results
                       }}
-                      style={{
-                        width: "100%",
-                        padding: "0.6rem",
-                        marginTop: "0.75rem",
-                        backgroundColor: "transparent",
-                        color: "#0071e3",
-                        border: "none",
-                        borderRadius: "10px",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        cursor: "pointer"
-                      }}
+                      className="filter-reset-button"
                     >
                       Reset All Filters
                     </button>
