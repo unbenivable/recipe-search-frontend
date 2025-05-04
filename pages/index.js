@@ -39,6 +39,7 @@ export default function Home() {
   const [pageSize, setPageSize] = useState(10);
   const [pagination, setPagination] = useState(null);
   const [totalResults, setTotalResults] = useState(0);
+  const [maxResultsToShow, setMaxResultsToShow] = useState(100); // Limit for display purposes
 
   // Add lists for non-vegan/vegetarian ingredients to filter out
   const meatIngredients = [
@@ -297,10 +298,11 @@ export default function Home() {
       // Set matchAll to false for 1-2 ingredients, true for 3+
       const useStrictMatching = ingredientsArray.length >= 3;
       
-      // Add pagination parameters
+      // Add pagination parameters with max_results to limit the total results returned
       const paginationParams = {
         page: page,
-        page_size: pageSize
+        page_size: pageSize,
+        max_results: 100 // Limit total results to avoid performance issues
       };
       
       console.log('API request payload:', { 
@@ -330,7 +332,14 @@ export default function Home() {
       // Store pagination information if it's available
       if (response.data.pagination) {
         setPagination(response.data.pagination);
-        setTotalResults(response.data.pagination.total || recipesData.length);
+        // Limit the total displayed for better UX if it's very large
+        const rawTotal = response.data.pagination.total || recipesData.length;
+        setTotalResults(Math.min(rawTotal, maxResultsToShow));
+        
+        // If the total is very high, update maxResultsToShow to match what the API is actually returning
+        if (rawTotal > maxResultsToShow) {
+          setMaxResultsToShow(Math.min(rawTotal, 100)); // Cap at 100 for performance
+        }
       } else {
         setPagination(null);
         setTotalResults(recipesData.length);
@@ -1327,7 +1336,10 @@ export default function Home() {
                 color: "var(--foreground-muted)",
                 fontSize: "14px"
               }}>
-                Displaying {filteredRecipes.length} {filteredRecipes.length !== recipes.length ? 'filtered' : ''} results out of {totalResults} total
+                Displaying {filteredRecipes.length} {filteredRecipes.length !== recipes.length ? 'filtered' : ''} results
+                {totalResults > filteredRecipes.length && (
+                  <span> out of {totalResults > maxResultsToShow ? `${maxResultsToShow}+` : totalResults} total</span>
+                )}
                 {pagination && <span> (Page {pagination.page} of {pagination.pages})</span>}
               </div>
             )}
