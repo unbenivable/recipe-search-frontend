@@ -752,6 +752,14 @@ export default function Home() {
     return pageNumbers;
   };
 
+  useEffect(() => {
+    // Only fetch recipes if there are ingredients
+    if (ingredients.trim().length > 0) {
+      fetchRecipes();
+    }
+    // Only run when these change
+  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter, currentPage]);
+
   return (
     <div style={{ 
       background: "var(--background)", 
