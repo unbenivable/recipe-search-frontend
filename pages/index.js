@@ -222,11 +222,9 @@ export default function Home() {
     // Debounce to prevent too many API calls
     const debounceTimeout = setTimeout(() => {
       if (ingredients.trim().length > 0) {
-        // Don't call fetchRecipes directly as it's a function that changes state
-        // which would trigger another render and cause an infinite loop
         handleSearchChange();
       }
-    }, 300); // 300ms debounce
+    }, 500); // 500ms debounce to give more time for typing
     
     return () => clearTimeout(debounceTimeout);
   }, [ingredients]); // Run when ingredients change
@@ -650,6 +648,11 @@ export default function Home() {
   };
 
   const fetchRecipes = async () => {
+    // Reset recipes state before searching
+    setRecipes([]);
+    setFilteredRecipes([]);
+    
+    // Then call the search handler
     handleSearchChange();
   };
 
@@ -1229,6 +1232,17 @@ export default function Home() {
             gap: "1.5rem", 
             justifyContent: "center" 
           }}>
+            {filteredRecipes.length > 0 && (
+              <div style={{ 
+                width: "100%", 
+                textAlign: "center", 
+                margin: "0 0 1rem 0",
+                color: "var(--foreground-muted)",
+                fontSize: "14px"
+              }}>
+                Displaying {filteredRecipes.length} {filteredRecipes.length !== recipes.length ? 'filtered' : ''} results out of {recipes.length} total
+              </div>
+            )}
             {filteredRecipes.map((recipe, index) => (
               <div 
                 key={index} 
@@ -1481,7 +1495,7 @@ export default function Home() {
           <p style={{ 
             textAlign: "center", 
             fontSize: "16px", 
-            color: "#636366",
+            color: "var(--foreground-muted)",
             marginBottom: "1.5rem" 
           }}>
             Upload a food image to detect ingredients and find recipes.
@@ -1663,6 +1677,17 @@ export default function Home() {
           )}
           {detectFilteredRecipes.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
+              {detectFilteredRecipes.length > 0 && (
+                <div style={{ 
+                  width: "100%", 
+                  textAlign: "center", 
+                  margin: "0 0 1rem 0",
+                  color: "var(--foreground-muted)",
+                  fontSize: "14px"
+                }}>
+                  Displaying {detectFilteredRecipes.length} {detectFilteredRecipes.length !== detectRecipes.length ? 'filtered' : ''} results out of {detectRecipes.length} total
+                </div>
+              )}
               {detectFilteredRecipes.map((recipe, index) => (
                 <div 
                   key={index} 
@@ -1777,7 +1802,7 @@ export default function Home() {
         padding: "1.5rem",
         textAlign: "center",
         position: "relative",
-        color: "#8e8e93",
+        color: "var(--foreground-muted)",
         fontSize: "14px"
       }}
       className="footer"
@@ -1788,7 +1813,8 @@ export default function Home() {
           top: 0,
           left: "5%",
           right: "5%",
-          height: "1px"
+          height: "1px",
+          backgroundColor: "var(--border-color)"
         }} />
         <p style={{ marginBottom: "0.75rem", paddingTop: "1.5rem" }}>Niv & Gal © 2025</p>
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
