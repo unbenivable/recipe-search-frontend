@@ -33,6 +33,12 @@ export default function Home() {
   const [cookingTimeFilter, setCookingTimeFilter] = useState('any'); // 'any', 'under15', 'under30', 'under60'
   const [cuisineFilter, setCuisineFilter] = useState('any'); // 'any', 'italian', 'mexican', 'asian', 'american', 'indian', etc.
   const [mealTypeFilter, setMealTypeFilter] = useState('any'); // 'any', 'breakfast', 'lunch', 'dinner', 'dessert', 'snack'
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [pagination, setPagination] = useState(null);
+  const [totalResults, setTotalResults] = useState(0);
 
   // Add lists for non-vegan/vegetarian ingredients to filter out
   const meatIngredients = [
@@ -229,8 +235,15 @@ export default function Home() {
     return () => clearTimeout(debounceTimeout);
   }, [ingredients]); // Run when ingredients change
   
+  // Reset pagination when search terms or filters change
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter]);
+  
   // Extracted function to handle search logic without causing infinite loops
-  const handleSearchChange = async () => {
+  const handleSearchChange = async (page = currentPage) => {
     if (!ingredients.trim()) return;
     
     setLoading(true);
@@ -284,11 +297,18 @@ export default function Home() {
       // Set matchAll to false for 1-2 ingredients, true for 3+
       const useStrictMatching = ingredientsArray.length >= 3;
       
+      // Add pagination parameters
+      const paginationParams = {
+        page: page,
+        page_size: pageSize
+      };
+      
       console.log('API request payload:', { 
         ingredients: ingredientsArray,
         dietary: activeFilters.length > 0 ? activeFilters : undefined,
         matchAll: useStrictMatching,
-        ...additionalFilters
+        ...additionalFilters,
+        ...paginationParams
       });
       
       const response = await axios.post(
@@ -297,7 +317,8 @@ export default function Home() {
           ingredients: ingredientsArray,
           dietary: activeFilters.length > 0 ? activeFilters : undefined,
           matchAll: useStrictMatching, // More flexible matching for fewer ingredients
-          ...additionalFilters
+          ...additionalFilters,
+          ...paginationParams
         }
       );
       
@@ -305,6 +326,15 @@ export default function Home() {
       console.log('Recipes from API:', response.data.recipes ? response.data.recipes.length : 0);
       console.log('First 2 recipes sample:', response.data.recipes?.slice(0, 2));
       let recipesData = response.data.recipes || [];
+      
+      // Store pagination information if it's available
+      if (response.data.pagination) {
+        setPagination(response.data.pagination);
+        setTotalResults(response.data.pagination.total || recipesData.length);
+      } else {
+        setPagination(null);
+        setTotalResults(recipesData.length);
+      }
       
       // Sort recipes by relevance (how many ingredients they match)
       console.log('Before ranking - recipe count:', recipesData.length);
@@ -647,13 +677,70 @@ export default function Home() {
     );
   };
 
-  const fetchRecipes = async () => {
+  const fetchRecipes = async (page = currentPage) => {
     // Reset recipes state before searching
-    setRecipes([]);
-    setFilteredRecipes([]);
+    if (page === 1) {
+      setRecipes([]);
+      setFilteredRecipes([]);
+    }
     
-    // Then call the search handler
-    handleSearchChange();
+    // Then call the search handler with the specified page
+    handleSearchChange(page);
+  };
+
+  // Function to handle page changes
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || (pagination && newPage > pagination.pages)) return;
+    
+    setCurrentPage(newPage);
+    fetchRecipes(newPage);
+    
+    // Scroll to the top of the results
+    const resultsSection = document.getElementById('recipe-results');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Helper function to generate page numbers array for pagination UI
+  const getPageNumbers = () => {
+    if (!pagination) return [];
+    
+    // If pagination response includes page_numbers, use those
+    if (pagination.page_numbers && pagination.page_numbers.length > 0) {
+      return pagination.page_numbers;
+    }
+    
+    // Otherwise generate page numbers to display (show up to 5 pages)
+    const { page, pages } = pagination;
+    const pageNumbers = [];
+    
+    if (pages <= 5) {
+      // Show all page numbers if 5 or fewer
+      for (let i = 1; i <= pages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Show pages around the current page
+      if (page <= 3) {
+        // Near the start
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i);
+        }
+      } else if (page >= pages - 2) {
+        // Near the end
+        for (let i = pages - 4; i <= pages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        // In the middle
+        for (let i = page - 2; i <= page + 2; i++) {
+          pageNumbers.push(i);
+        }
+      }
+    }
+    
+    return pageNumbers;
   };
 
   return (
@@ -1226,7 +1313,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div style={{ 
+          <div id="recipe-results" style={{ 
             display: "flex", 
             flexWrap: "wrap", 
             gap: "1.5rem", 
@@ -1240,7 +1327,8 @@ export default function Home() {
                 color: "var(--foreground-muted)",
                 fontSize: "14px"
               }}>
-                Displaying {filteredRecipes.length} {filteredRecipes.length !== recipes.length ? 'filtered' : ''} results out of {recipes.length} total
+                Displaying {filteredRecipes.length} {filteredRecipes.length !== recipes.length ? 'filtered' : ''} results out of {totalResults} total
+                {pagination && <span> (Page {pagination.page} of {pagination.pages})</span>}
               </div>
             )}
             {filteredRecipes.map((recipe, index) => (
@@ -1488,9 +1576,118 @@ export default function Home() {
                 )}
               </div>
             ))}
+            
+            {/* Pagination Controls */}
+            {pagination && pagination.pages > 1 && (
+              <div style={{
+                width: "100%",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: "2rem",
+                gap: "0.5rem",
+                flexWrap: "wrap"
+              }}>
+                {/* First page button */}
+                <button
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    backgroundColor: currentPage === 1 ? "var(--card-bg)" : "var(--primary)",
+                    color: currentPage === 1 ? "var(--foreground-muted)" : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    opacity: currentPage === 1 ? 0.7 : 1,
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}
+                >
+                  First
+                </button>
+                
+                {/* Previous page button */}
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    backgroundColor: currentPage === 1 ? "var(--card-bg)" : "var(--primary)",
+                    color: currentPage === 1 ? "var(--foreground-muted)" : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                    opacity: currentPage === 1 ? 0.7 : 1,
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}
+                >
+                  Previous
+                </button>
+                
+                {/* Page numbers */}
+                {getPageNumbers().map(pageNum => (
+                  <button
+                    key={`page-${pageNum}`}
+                    onClick={() => handlePageChange(pageNum)}
+                    style={{
+                      padding: "0.5rem 1rem",
+                      backgroundColor: currentPage === pageNum ? "var(--primary)" : "var(--card-bg)",
+                      color: currentPage === pageNum ? "white" : "var(--foreground)",
+                      border: "none",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      fontWeight: "500"
+                    }}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                
+                {/* Next page button */}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={!pagination.has_next}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    backgroundColor: !pagination.has_next ? "var(--card-bg)" : "var(--primary)",
+                    color: !pagination.has_next ? "var(--foreground-muted)" : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: !pagination.has_next ? "not-allowed" : "pointer",
+                    opacity: !pagination.has_next ? 0.7 : 1,
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}
+                >
+                  Next
+                </button>
+                
+                {/* Last page button */}
+                <button
+                  onClick={() => handlePageChange(pagination.pages)}
+                  disabled={currentPage === pagination.pages}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    backgroundColor: currentPage === pagination.pages ? "var(--card-bg)" : "var(--primary)",
+                    color: currentPage === pagination.pages ? "var(--foreground-muted)" : "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: currentPage === pagination.pages ? "not-allowed" : "pointer",
+                    opacity: currentPage === pagination.pages ? 0.7 : 1,
+                    fontSize: "14px",
+                    fontWeight: "500"
+                  }}
+                >
+                  Last
+                </button>
+              </div>
+            )}
           </div>
-                  </div>
-                ) : (
+        </div>
+      ) : (
         <>
           <p style={{ 
             textAlign: "center", 
