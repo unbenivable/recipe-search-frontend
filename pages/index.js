@@ -2,6 +2,40 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
+// Helper function to create axios config that handles circular references
+const createCircularJsonHandler = () => {
+  return {
+    transformRequest: [(data, headers) => {
+      // Custom JSON.stringify with a replacer function to handle circular references
+      const seen = new WeakSet();
+      const replacer = (key, value) => {
+        // Skip React-specific properties that might cause circular references
+        if (key.startsWith('__react') || key === 'stateNode') {
+          return undefined;
+        }
+        
+        // Handle DOM nodes and React elements
+        if (value instanceof Element || 
+            value instanceof SVGElement || 
+            (typeof value === 'object' && value !== null && value.$$typeof)) {
+          return '[ReactElement]';
+        }
+        
+        // Handle other circular references
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return undefined;
+          }
+          seen.add(value);
+        }
+        return value;
+      };
+      
+      return JSON.stringify(data, replacer);
+    }]
+  };
+};
+
 export default function Home() {
   const [ingredients, setIngredients] = useState('');
   const [recipes, setRecipes] = useState([]);
@@ -305,23 +339,24 @@ export default function Home() {
         max_results: 100 // Limit total results to avoid performance issues
       };
       
-      console.log('API request payload:', { 
+      // Create a clean request payload without any React/DOM elements
+      const requestPayload = {
         ingredients: ingredientsArray,
         dietary: activeFilters.length > 0 ? activeFilters : undefined,
         matchAll: useStrictMatching,
         ...additionalFilters,
         ...paginationParams
-      });
+      };
+      
+      console.log('API request payload:', requestPayload);
+      
+      // Configure axios to handle circular references
+      const axiosConfig = createCircularJsonHandler();
       
       const response = await axios.post(
         process.env.NEXT_PUBLIC_BACKEND_URL,
-        { 
-          ingredients: ingredientsArray,
-          dietary: activeFilters.length > 0 ? activeFilters : undefined,
-          matchAll: useStrictMatching, // More flexible matching for fewer ingredients
-          ...additionalFilters,
-          ...paginationParams
-        }
+        requestPayload,
+        axiosConfig
       );
       
       console.log('Search response data:', response.data);
@@ -363,7 +398,21 @@ export default function Home() {
     } catch (error) {
       console.error('Error fetching recipes:', error);
       setRecipes([]);
-      setErrorMessage('Failed to fetch recipes. Please try again.');
+      
+      // More descriptive error messages based on error type
+      if (error.code === 'ERR_NETWORK') {
+        setErrorMessage('Unable to connect to the recipe server. Please check your internet connection or try again later.');
+      } else if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        setErrorMessage(`Server error: ${error.response.status} ${error.response.data?.detail || ''}`);
+      } else if (error.request) {
+        // The request was made but no response was received
+        setErrorMessage('No response from server. Please try again later.');
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        setErrorMessage('Failed to fetch recipes. Please try again.');
+      }
     }
     setLoading(false);
   };
@@ -415,7 +464,10 @@ export default function Home() {
     setImages([]);
     
     try {
-      const response = await axios.post('/api/imageSearch', { query: imageQuery });
+      // Configure axios to handle circular references
+      const axiosConfig = createCircularJsonHandler();
+      
+      const response = await axios.post('/api/imageSearch', { query: imageQuery }, axiosConfig);
       setImages(response.data.images || []);
       if (response.data.images.length === 0) {
         setErrorMessage('No image results found. Try a different query.');
@@ -492,14 +544,21 @@ export default function Home() {
           additionalFilters.mealType = mealTypeFilter;
         }
         
+        // Create a clean request payload
+        const requestPayload = { 
+          ingredients: detected,
+          dietary: activeFilters.length > 0 ? activeFilters : undefined,
+          matchAll: false, // More flexible matching for detection
+          ...additionalFilters
+        };
+        
+        // Configure axios to handle circular references
+        const axiosConfig = createCircularJsonHandler();
+        
         const recipeResp = await axios.post(
           process.env.NEXT_PUBLIC_BACKEND_URL,
-          { 
-            ingredients: detected,
-            dietary: activeFilters.length > 0 ? activeFilters : undefined,
-            matchAll: false, // More flexible matching for detection
-            ...additionalFilters
-          }
+          requestPayload,
+          axiosConfig
         );
         console.log('Recipe response:', recipeResp.data);
         
@@ -693,7 +752,8 @@ export default function Home() {
       setFilteredRecipes([]);
     }
     
-    // Then call the search handler with the specified page
+    // Then call the search handler with the specified page 
+    // The handleSearchChange function already has the circular JSON fix
     handleSearchChange(page);
   };
 
