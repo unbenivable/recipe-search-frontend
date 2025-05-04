@@ -342,7 +342,7 @@ export default function Home() {
       // Create a clean request payload without any React/DOM elements
       const requestPayload = {
         ingredients: ingredientsArray,
-        dietary: activeFilters.length > 0 ? activeFilters : undefined,
+        dietary: activeFilters.length > 0 ? activeFilters : [], // Always include dietary as an empty array if no filters
         matchAll: useStrictMatching,
         ...additionalFilters,
         ...paginationParams
@@ -547,7 +547,7 @@ export default function Home() {
         // Create a clean request payload
         const requestPayload = { 
           ingredients: detected,
-          dietary: activeFilters.length > 0 ? activeFilters : undefined,
+          dietary: activeFilters.length > 0 ? activeFilters : [], // Always include dietary as an empty array
           matchAll: false, // More flexible matching for detection
           ...additionalFilters
         };
