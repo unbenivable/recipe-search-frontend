@@ -10,15 +10,15 @@ import React from 'react';
 axios.defaults.timeout = 15000; // 15 seconds timeout
 
 // Configure axios to handle circular references globally
-axios.interceptors.request.use((config) => {
+axios.interceptors.request.use((config: any) => {
   // Only transform if there's no transformRequest already defined
   if (!config.transformRequest) {
-    config.transformRequest = [(data, headers) => {
+    config.transformRequest = [(data: any, headers?: any) => {
       if (data && typeof data === 'object') {
         try {
           // Custom JSON.stringify with a replacer function to handle circular references
           const seen = new WeakSet();
-          const replacer = (key, value) => {
+          const replacer = (key: string, value: any) => {
             // Skip React-specific properties that might cause circular references
             if (key.startsWith('__react') || key === 'stateNode') {
               return undefined;
@@ -61,7 +61,7 @@ axios.interceptors.request.use((config) => {
 // Add a response interceptor for better error handling
 axios.interceptors.response.use(
   response => response, 
-  error => {
+  (error: any) => {
     // Improve error messages for common issues
     if (error.code === 'ERR_NETWORK') {
       console.error('Network Error Details:', {
