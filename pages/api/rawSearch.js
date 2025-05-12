@@ -1,33 +1,42 @@
 import axios from 'axios';
 
+// Disable body parsing for this route
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Log the incoming request body for debugging
-    console.log('Incoming request body:', req.body);
+    // Collect the raw request body
+    const chunks = [];
+    await new Promise((resolve, reject) => {
+      req.on('data', (chunk) => chunks.push(chunk));
+      req.on('end', resolve);
+      req.on('error', reject);
+    });
     
-    // Check if the body has the strange format from the error message
-    let requestBody = req.body;
+    const rawBody = Buffer.concat(chunks).toString('utf8');
+    console.log('Raw request body:', rawBody);
     
-    // If the req.body has the JSON string as a key, extract the actual content
-    const bodyKeys = Object.keys(req.body);
-    if (bodyKeys.length === 1 && bodyKeys[0].startsWith('{') && bodyKeys[0].includes('ingredients')) {
-      try {
-        // Parse the key as JSON to extract the real request body
-        requestBody = JSON.parse(bodyKeys[0]);
-        console.log('Extracted body from key:', requestBody);
-      } catch (parseError) {
-        console.error('Error parsing body key as JSON:', parseError);
-      }
+    // Parse the raw body
+    let parsedBody;
+    try {
+      parsedBody = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('Error parsing raw body:', parseError);
+      return res.status(400).json({ error: 'Invalid JSON body' });
     }
-
-    // Make the request with the fixed body
+    
+    // Forward the request using the raw body
     const response = await axios.post(
       'https://web-production-9df5.up.railway.app/search',
-      requestBody,
+      parsedBody,
       {
         headers: {
           'Content-Type': 'application/json',
