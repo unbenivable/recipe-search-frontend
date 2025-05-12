@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearch } from '@/hooks/useSearch';
 import { detectIngredientsAPI } from '@/utils/api';
 import { Recipe } from '@/types';
+import axios from 'axios';
 
 // Import components
 import ErrorMessage from '@/components/ErrorMessage';
@@ -101,9 +102,16 @@ const Home: React.FC = () => {
         console.error('No ingredients detected in the image');
         setErrorMessage('No ingredients detected in the image. Please try a different image.');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error detecting ingredients:', error);
-      const errorMsg = error.response?.data?.error || 'Error detecting ingredients. Please try again.';
+      // Type guard for axios error
+      const errorMsg = 
+        error && typeof error === 'object' && 'response' in error && 
+        error.response && typeof error.response === 'object' && 'data' in error.response && 
+        error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data ?
+        String(error.response.data.error) : 
+        'Error detecting ingredients. Please try again.';
+      
       setErrorMessage(errorMsg);
     } finally {
       setIsDetectingIngredients(false);
