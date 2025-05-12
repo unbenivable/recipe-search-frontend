@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 
@@ -258,26 +258,55 @@ export default function Home() {
     setFilteredRecipes(applyDietaryFilters(recipes));
   }, [recipes, dietaryFilters]);
   
-  // Real-time search effect - fetch results as the user types
-  useEffect(() => {
-    // Debounce to prevent too many API calls
-    const debounceTimeout = setTimeout(() => {
-      if (ingredients.trim().length > 0) {
-        handleSearchChange();
-      }
-    }, 500); // 500ms debounce to give more time for typing
-    
-    return () => clearTimeout(debounceTimeout);
-  }, [ingredients]); // Run when ingredients change
-  
-  // Reset pagination when search terms or filters change
-  useEffect(() => {
-    if (currentPage !== 1) {
-      setCurrentPage(1);
+  // Cache for search results to reduce API calls
+  const [searchCache, setSearchCache] = useState({});
+  // For debouncing search input
+  const searchTimeoutRef = useRef(null);
+  const [searchAttempts, setSearchAttempts] = useState(0);
+  const [isRateLimited, setIsRateLimited] = useState(false);
+  const rateLimitTimerRef = useRef(null);
+
+  // Create a debounced search function to prevent too many requests
+  const debouncedSearch = useCallback((page = currentPage) => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
-  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter]);
-  
-  // Extracted function to handle search logic without causing infinite loops
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      handleSearchChange(page);
+    }, 500); // 500ms debounce time
+  }, [currentPage]);
+
+  // Replace the useEffect for real-time search with this optimized version
+  useEffect(() => {
+    // Use cached results if available and not too old
+    const cacheKey = `${ingredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}`;
+    const cachedData = searchCache[cacheKey];
+    
+    // If we have cached data less than 5 minutes old, use it
+    if (cachedData && (Date.now() - cachedData.timestamp < 5 * 60 * 1000)) {
+      console.log('Using cached search results');
+      setRecipes(cachedData.recipes);
+      setPagination(cachedData.pagination);
+      setTotalResults(cachedData.totalResults);
+      return;
+    }
+    
+    if (ingredients.trim().length > 0) {
+      // Only search if not rate limited
+      if (!isRateLimited) {
+        debouncedSearch();
+      }
+    }
+    
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter, isRateLimited, debouncedSearch]);
+
+  // Now modify handleSearchChange to implement caching and rate limit handling
   const handleSearchChange = async (page = currentPage) => {
     if (!ingredients.trim()) return;
     
@@ -285,6 +314,20 @@ export default function Home() {
     setErrorMessage('');
     
     try {
+      // Build cache key from all search parameters
+      const cacheKey = `${ingredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}`;
+      
+      // Check if we have a cached result (double-check in case it was used in useEffect)
+      const cachedData = searchCache[cacheKey];
+      if (cachedData && (Date.now() - cachedData.timestamp < 5 * 60 * 1000)) {
+        console.log('Using cached search results');
+        setRecipes(cachedData.recipes);
+        setPagination(cachedData.pagination);
+        setTotalResults(cachedData.totalResults);
+        setLoading(false);
+        return;
+      }
+
       // Determine if input uses commas or spaces
       const hasCommas = ingredients.includes(',');
       
@@ -385,7 +428,21 @@ export default function Home() {
       recipesData = rankRecipesByIngredientMatches(recipesData, ingredientsArray);
       console.log('After ranking - recipe count:', recipesData.length);
       
+      // Store the results in cache
+      setSearchCache(prevCache => ({
+        ...prevCache,
+        [cacheKey]: {
+          recipes: recipesData,
+          pagination: response.data.pagination,
+          totalResults: recipesData.length,
+          timestamp: Date.now()
+        }
+      }));
+      
       setRecipes(recipesData);
+      
+      // Reset search attempts when a successful search happens
+      setSearchAttempts(0);
       
       // Show a message if no recipes found
       if (recipesData.length === 0) {
@@ -399,8 +456,28 @@ export default function Home() {
       console.error('Error fetching recipes:', error);
       setRecipes([]);
       
-      // More descriptive error messages based on error type
-      if (error.code === 'ERR_NETWORK') {
+      // Increment search attempts
+      setSearchAttempts(prev => prev + 1);
+      
+      // Check if rate limited (HTTP 429)
+      if (error.response && error.response.status === 429) {
+        setIsRateLimited(true);
+        // Clear any existing timer
+        if (rateLimitTimerRef.current) {
+          clearTimeout(rateLimitTimerRef.current);
+        }
+        
+        // Exponential backoff - wait longer each time
+        const backoffTime = Math.min(30000, 1000 * Math.pow(2, searchAttempts)); // Max 30 seconds
+        
+        setErrorMessage(`Server error: 429 Too many requests. Please try again in ${Math.round(backoffTime/1000)} seconds.`);
+        
+        // Auto-clear rate limit after backoff time
+        rateLimitTimerRef.current = setTimeout(() => {
+          setIsRateLimited(false);
+          setErrorMessage('');
+        }, backoffTime);
+      } else if (error.code === 'ERR_NETWORK') {
         setErrorMessage('Unable to connect to the recipe server. Please check your internet connection or try again later.');
       } else if (error.response) {
         // The request was made and the server responded with a status code
@@ -416,6 +493,86 @@ export default function Home() {
     }
     setLoading(false);
   };
+
+  // Modify fetchRecipes to use the debounced search
+  const fetchRecipes = async (page = currentPage) => {
+    // Reset recipes state before searching
+    if (page === 1) {
+      setRecipes([]);
+      setFilteredRecipes([]);
+    }
+    
+    // Check if we're rate limited before making a request
+    if (isRateLimited) {
+      return;
+    }
+    
+    // Call the debounced search instead of direct search
+    debouncedSearch(page);
+  };
+
+  // Function to handle page changes
+  const handlePageChange = (newPage) => {
+    if (newPage < 1 || (pagination && newPage > pagination.pages)) return;
+    
+    setCurrentPage(newPage);
+    fetchRecipes(newPage);
+    
+    // Scroll to the top of the results
+    const resultsSection = document.getElementById('recipe-results');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Helper function to generate page numbers array for pagination UI
+  const getPageNumbers = () => {
+    if (!pagination) return [];
+    
+    // If pagination response includes page_numbers, use those
+    if (pagination.page_numbers && pagination.page_numbers.length > 0) {
+      return pagination.page_numbers;
+    }
+    
+    // Otherwise generate page numbers to display (show up to 5 pages)
+    const { page, pages } = pagination;
+    const pageNumbers = [];
+    
+    if (pages <= 5) {
+      // Show all page numbers if 5 or fewer
+      for (let i = 1; i <= pages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Show pages around the current page
+      if (page <= 3) {
+        // Near the start
+        for (let i = 1; i <= 5; i++) {
+          pageNumbers.push(i);
+        }
+      } else if (page >= pages - 2) {
+        // Near the end
+        for (let i = pages - 4; i <= pages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        // In the middle
+        for (let i = page - 2; i <= page + 2; i++) {
+          pageNumbers.push(i);
+        }
+      }
+    }
+    
+    return pageNumbers;
+  };
+
+  useEffect(() => {
+    // Only fetch recipes if there are ingredients
+    if (ingredients.trim().length > 0) {
+      fetchRecipes();
+    }
+    // Only run when these change
+  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter, currentPage]);
 
   // Apply dietary filters to detected recipes
   useEffect(() => {
@@ -744,81 +901,6 @@ export default function Home() {
       </div>
     );
   };
-
-  const fetchRecipes = async (page = currentPage) => {
-    // Reset recipes state before searching
-    if (page === 1) {
-      setRecipes([]);
-      setFilteredRecipes([]);
-    }
-    
-    // Then call the search handler with the specified page 
-    // The handleSearchChange function already has the circular JSON fix
-    handleSearchChange(page);
-  };
-
-  // Function to handle page changes
-  const handlePageChange = (newPage) => {
-    if (newPage < 1 || (pagination && newPage > pagination.pages)) return;
-    
-    setCurrentPage(newPage);
-    fetchRecipes(newPage);
-    
-    // Scroll to the top of the results
-    const resultsSection = document.getElementById('recipe-results');
-    if (resultsSection) {
-      resultsSection.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  // Helper function to generate page numbers array for pagination UI
-  const getPageNumbers = () => {
-    if (!pagination) return [];
-    
-    // If pagination response includes page_numbers, use those
-    if (pagination.page_numbers && pagination.page_numbers.length > 0) {
-      return pagination.page_numbers;
-    }
-    
-    // Otherwise generate page numbers to display (show up to 5 pages)
-    const { page, pages } = pagination;
-    const pageNumbers = [];
-    
-    if (pages <= 5) {
-      // Show all page numbers if 5 or fewer
-      for (let i = 1; i <= pages; i++) {
-        pageNumbers.push(i);
-      }
-    } else {
-      // Show pages around the current page
-      if (page <= 3) {
-        // Near the start
-        for (let i = 1; i <= 5; i++) {
-          pageNumbers.push(i);
-        }
-      } else if (page >= pages - 2) {
-        // Near the end
-        for (let i = pages - 4; i <= pages; i++) {
-          pageNumbers.push(i);
-        }
-      } else {
-        // In the middle
-        for (let i = page - 2; i <= page + 2; i++) {
-          pageNumbers.push(i);
-        }
-      }
-    }
-    
-    return pageNumbers;
-  };
-
-  useEffect(() => {
-    // Only fetch recipes if there are ingredients
-    if (ingredients.trim().length > 0) {
-      fetchRecipes();
-    }
-    // Only run when these change
-  }, [ingredients, dietaryFilters, cookingTimeFilter, cuisineFilter, mealTypeFilter, currentPage]);
 
   return (
     <div style={{ 
