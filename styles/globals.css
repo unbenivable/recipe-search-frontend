@@ -1,99 +1,17 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --foreground-muted: #636366;
-  --border-color: #e6e6e6;
-  --card-bg: #f5f5f7;
-  --card-border: #e6e6e6;
-  --primary: #0071e3;
-  --primary-hover: #0066cc;
-  --success: #34c759;
-  --input-text: #1d1d1f;
-  --input-bg: #ffffff;
-  --filter-divider: #f2f2f7;
-  --filter-option-bg: rgba(0,113,227,0.1);
-  --filter-option-text: #0071e3;
-  --filter-option-active: #0071e3;
-  --filter-option-inactive: #d1d1d6;
+/* Loading spinner animation */
+.loading-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s ease-in-out infinite;
+  margin-right: 4px;
 }
 
-[data-theme="dark"] {
-  --background: #0d1117;
-  --foreground: #ffffff;
-  --foreground-muted: #8e8e93;
-  --border-color: #30363d;
-  --card-bg: #161b22;
-  --card-border: #30363d;
-  --primary: #58a6ff;
-  --primary-hover: #79c0ff;
-  --success: #30d158;
-  --input-text: #e1e1e6;
-  --input-bg: #21262d;
-  --filter-divider: #2d333b;
-  --filter-option-bg: rgba(88,166,255,0.1);
-  --filter-option-text: #58a6ff;
-  --filter-option-active: #58a6ff;
-  --filter-option-inactive: #30363d;
-}
-
-.dark {
-  --background: #0d1117;
-  --foreground: #ffffff;
-  --foreground-muted: #8e8e93;
-  --border-color: #30363d;
-  --card-bg: #161b22;
-  --card-border: #30363d;
-  --primary: #58a6ff;
-  --primary-hover: #79c0ff;
-  --success: #30d158;
-  --input-text: #e1e1e6;
-  --input-bg: #21262d;
-  --filter-divider: #2d333b;
-  --filter-option-bg: rgba(88,166,255,0.1);
-  --filter-option-text: #58a6ff;
-  --filter-option-active: #58a6ff;
-  --filter-option-inactive: #30363d;
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: color 0.3s ease, background-color 0.3s ease;
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-/* Ensure all inputs have proper text color */
-input, 
-input::placeholder {
-  color: var(--input-text);
-  background-color: var(--input-bg);
-}
-
-input {
-  color: var(--input-text) !important;
-  background-color: var(--input-bg) !important;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Recipe card hover effects */
@@ -102,192 +20,28 @@ a {
 }
 
 .recipe-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1) !important;
+  transform: translateY(-5px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
 }
 
-/* Mobile optimizations */
-@media (max-width: 768px) {
-  h1 {
-    font-size: 28px !important;
-  }
-  
-  h2 {
-    font-size: 16px !important;
-  }
-  
-  button {
-    width: 100%;
-  }
+/* Basic reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+body {
+  background-color: #121212;
+  color: white;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
-/* Footer styling in light and dark mode */
-[data-theme="dark"] .footer-divider {
-  background: linear-gradient(to right, rgba(60,60,60,0), rgba(60,60,60,0.8) 50%, rgba(60,60,60,0));
+/* Override any remaining Tailwind dark mode classes */
+.dark {
+  color-scheme: dark;
 }
 
-.dark .footer-divider {
-  background: linear-gradient(to right, rgba(60,60,60,0), rgba(60,60,60,0.8) 50%, rgba(60,60,60,0));
-}
-
-.footer-divider {
-  background: linear-gradient(to right, rgba(200,200,200,0), rgba(200,200,200,0.8) 50%, rgba(200,200,200,0));
-}
-
-/* Filter dropdown styling */
-.filter-dropdown {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: 220px;
-  background: var(--card-bg);
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-  padding: 1rem;
-  z-index: 20;
-}
-
-.filter-section {
-  margin-bottom: 1rem;
-}
-
-.filter-heading {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--foreground);
-  margin: 0 0 0.75rem 0;
-}
-
-.filter-divider {
-  border-bottom: 1px solid var(--filter-divider);
-  padding-bottom: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.filter-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.filter-option:hover {
-  background-color: var(--filter-option-bg);
-}
-
-.filter-option-selected {
-  background-color: var(--filter-option-bg);
-}
-
-.filter-option-radio {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  border: 2px solid var(--filter-option-text);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.filter-option-radio-inner {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background-color: var(--filter-option-text);
-}
-
-.filter-option-label {
-  font-size: 14px;
-  color: var(--foreground);
-}
-
-.filter-toggle {
-  width: 40px;
-  height: 24px;
-  background-color: var(--filter-option-inactive);
-  border-radius: 12px;
-  padding: 2px;
-  position: relative;
-  transition: background-color 0.2s ease;
-  cursor: pointer;
-}
-
-.filter-toggle-active {
-  background-color: var(--success);
-}
-
-.filter-toggle-knob {
-  width: 20px;
-  height: 20px;
-  background-color: white;
-  border-radius: 50%;
-  position: absolute;
-  top: 2px;
-  transition: left 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.filter-reset-button {
-  width: 100%;
-  padding: 0.6rem;
-  margin-top: 0.75rem;
-  background-color: transparent;
-  color: var(--primary);
-  border: none;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-/* Dark mode text and UI overrides */
-.dark h1, .dark h2, .dark h3, .dark h4, .dark p, .dark span, .dark li {
-  color: var(--foreground);
-}
-
-.dark .filter-option-label {
-  color: var(--foreground);
-}
-
-.dark .filter-heading {
-  color: var(--foreground);
-}
-
-.dark .filter-divider {
-  border-color: var(--filter-divider);
-}
-
-.dark input, 
-.dark input::placeholder {
-  color: var(--input-text) !important; 
-  background-color: var(--input-bg) !important;
-}
-
-.dark .recipe-card {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
-}
-
-.dark .recipe-card:hover {
-  box-shadow: 0 8px 16px rgba(0,0,0,0.5) !important;
-}
-
-/* Make sure content area expands to push footer down */
-.main-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.footer {
-  margin-top: auto;
-  position: relative;
+[data-theme="dark"] {
+  color-scheme: dark;
 }
