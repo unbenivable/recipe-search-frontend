@@ -261,7 +261,7 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
           ...prevCache,
           [cacheKey]: {
             recipes: recipesData,
-            pagination: data.pagination,
+            pagination: data.pagination || null,
             totalResults: recipesData.length,
             timestamp: Date.now()
           }
