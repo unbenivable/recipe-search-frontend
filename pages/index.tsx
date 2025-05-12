@@ -137,18 +137,6 @@ const Home: React.FC = () => {
       ];
     }
     
-    // Add sample nutrition data if none exists
-    if (!recipeWithDirections.nutrition) {
-      recipeWithDirections.nutrition = {
-        calories: "320 kcal",
-        protein: "12g",
-        carbs: "45g",
-        fat: "9g",
-        fiber: "5g",
-        sugar: "3g"
-      };
-    }
-    
     setSelectedRecipe(recipeWithDirections);
   };
 
