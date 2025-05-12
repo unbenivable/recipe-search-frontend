@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/react';
 import axios from 'axios';
 import { AppProps } from 'next/app';
 import React from 'react';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 // Set default timeout to prevent hanging requests
 axios.defaults.timeout = 15000; // 15 seconds timeout
@@ -76,11 +77,13 @@ axios.interceptors.response.use(
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system">
-      <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
-        <Component {...pageProps} />
-        <Analytics />
-      </div>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="system">
+        <div className="min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
+          <Component {...pageProps} />
+          <Analytics />
+        </div>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 } 

@@ -99,18 +99,24 @@ const Home: React.FC = () => {
         // Trigger search with new ingredients
         handleSearch();
       } else {
-        console.error('No ingredients detected in the image');
         setErrorMessage('No ingredients detected in the image. Please try a different image.');
       }
     } catch (error: unknown) {
       console.error('Error detecting ingredients:', error);
-      // Type guard for axios error
-      const errorMsg = 
-        error && typeof error === 'object' && 'response' in error && 
+      
+      let errorMsg = 'Error detecting ingredients. Please try again.';
+      
+      // Handle our RecipeAPIError specifically
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'RecipeAPIError') {
+        // We know this is our custom error type
+        const apiError = error as { message: string };
+        errorMsg = apiError.message;
+      } else if (error && typeof error === 'object' && 'response' in error && 
         error.response && typeof error.response === 'object' && 'data' in error.response && 
-        error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data ?
-        String(error.response.data.error) : 
-        'Error detecting ingredients. Please try again.';
+        error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data) {
+        // Legacy handling for axios errors
+        errorMsg = String(error.response.data.error);
+      }
       
       setErrorMessage(errorMsg);
     } finally {
