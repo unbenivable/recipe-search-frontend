@@ -44,6 +44,8 @@ export interface SearchHookState {
   totalResults: number;
   currentPage: number;
   totalPages: number;
+  pageSize: number;
+  pageNumbers: (number | string)[];
   setPage: (page: number) => void;
   performSearch: (page?: number, manual?: boolean) => void;
   resetFilters: () => void;
@@ -86,6 +88,7 @@ export interface RecipeListProps {
 export interface PaginationProps {
   currentPage: number;
   totalPages: number;
+  pageNumbers: (number | string)[];
   setPage: (page: number) => void;
 }
 

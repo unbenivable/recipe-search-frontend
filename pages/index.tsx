@@ -14,6 +14,40 @@ import RecipeDetailView from '@/components/RecipeDetailView';
 import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
 
+// Add global styles for smooth transitions
+const globalStyles = `
+  * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  
+  .slide-up {
+    animation: slideUp 0.4s ease forwards;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  
+  .recipe-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .recipe-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  }
+`;
+
 const Home: React.FC = () => {
   // Mobile detection state
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -38,6 +72,7 @@ const Home: React.FC = () => {
     totalResults,
     currentPage,
     totalPages,
+    pageNumbers,
     setPage,
     performSearch,
     resetFilters,
@@ -158,31 +193,8 @@ const Home: React.FC = () => {
       display: "flex",
       flexDirection: "column"
     }}>
-      {/* Loading spinner styles */}
-      <style jsx>{`
-        .loading-spinner {
-          display: inline-block;
-          width: 20px;
-          height: 20px;
-          border: 2px solid rgba(255,255,255,0.3);
-          border-radius: 50%;
-          border-top-color: white;
-          animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        
-        .recipe-card {
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-        
-        .recipe-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
-      `}</style>
+      {/* Add global styles */}
+      <style jsx global>{globalStyles}</style>
       
       {/* Error message component */}
       <ErrorMessage 
@@ -195,7 +207,8 @@ const Home: React.FC = () => {
         fontSize: "36px", 
         fontWeight: "600", 
         marginBottom: "0.5rem", 
-        color: "#ffffff"
+        color: "#ffffff",
+        animation: "fadeIn 0.8s ease"
       }}>Recipe Finder</h1>
       
       <h2 style={{ 
@@ -204,54 +217,59 @@ const Home: React.FC = () => {
         fontWeight: "500", 
         marginBottom: "2rem", 
         color: "#4285f4",
-        fontStyle: "italic"
+        fontStyle: "italic",
+        animation: "fadeIn 1s ease"
       }}>ingreddit.com</h2>
       
       {/* Search mode selector (recipes vs. image detection) */}
-      <SearchModeSelector 
-        searchMode={searchMode}
-        setSearchMode={setSearchMode}
-        isMobile={isMobile}
-      />
+      <div className="fade-in" style={{ animationDelay: "0.2s" }}>
+        <SearchModeSelector 
+          searchMode={searchMode}
+          setSearchMode={setSearchMode}
+          isMobile={isMobile}
+        />
+      </div>
 
       {/* Search UI based on selected mode */}
-      {searchMode === 'detect' ? (
-        <ImageUploader 
-          selectedImage={selectedImage}
-          setSelectedImage={setSelectedImage}
-          imagePreview={imagePreview}
-          setImagePreview={setImagePreview}
-          handleDetectIngredients={handleDetectIngredients}
-          isDetectingIngredients={isDetectingIngredients}
-        />
-      ) : (
-        <>
-          <p style={{ 
-            textAlign: "center", 
-            fontSize: "16px", 
-            color: "#a0a0a0",
-            marginBottom: "1.5rem" 
-          }}>
-            Enter ingredients separated by commas or spaces (e.g. chicken rice garlic)
-          </p>
-          
-          <SearchBar 
-            ingredients={ingredients}
-            setIngredients={setIngredients}
-            dietaryFilters={dietaryFilters}
-            toggleDietaryFilter={toggleDietaryFilter}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            handleClear={handleClear}
-            handleSearch={handleSearch}
-            isLoading={isLoading}
-            isRateLimited={isRateLimited}
+      <div className="fade-in" style={{ animationDelay: "0.4s" }}>
+        {searchMode === 'detect' ? (
+          <ImageUploader 
+            selectedImage={selectedImage}
+            setSelectedImage={setSelectedImage}
+            imagePreview={imagePreview}
+            setImagePreview={setImagePreview}
+            handleDetectIngredients={handleDetectIngredients}
+            isDetectingIngredients={isDetectingIngredients}
           />
-        </>
-      )}
+        ) : (
+          <>
+            <p style={{ 
+              textAlign: "center", 
+              fontSize: "16px", 
+              color: "#a0a0a0",
+              marginBottom: "1.5rem" 
+            }}>
+              Enter ingredients separated by commas or spaces (e.g. chicken rice garlic)
+            </p>
+            
+            <SearchBar 
+              ingredients={ingredients}
+              setIngredients={setIngredients}
+              dietaryFilters={dietaryFilters}
+              toggleDietaryFilter={toggleDietaryFilter}
+              showFilters={showFilters}
+              setShowFilters={setShowFilters}
+              handleClear={handleClear}
+              handleSearch={handleSearch}
+              isLoading={isLoading}
+              isRateLimited={isRateLimited}
+            />
+          </>
+        )}
+      </div>
 
       {/* Results section */}
-      <div style={{flex: 1}}>
+      <div className="fade-in" style={{ flex: 1, animationDelay: "0.6s" }}>
         <RecipeList 
           recipes={recipes}
           isLoading={isLoading}
@@ -265,6 +283,7 @@ const Home: React.FC = () => {
           <Pagination 
             currentPage={currentPage}
             totalPages={totalPages}
+            pageNumbers={pageNumbers}
             setPage={setPage}
           />
         )}
@@ -279,7 +298,9 @@ const Home: React.FC = () => {
       )}
       
       {/* Footer */}
-      <Footer />
+      <div className="fade-in" style={{ animationDelay: "0.8s" }}>
+        <Footer />
+      </div>
     </div>
   );
 };

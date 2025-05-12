@@ -32,7 +32,7 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(10);
+  const [pageSize, setPageSize] = useState<number>(12);
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [totalResults, setTotalResults] = useState<number>(0);
   const [maxResultsToShow, setMaxResultsToShow] = useState<number>(100);
@@ -406,6 +406,8 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
     totalResults,
     currentPage,
     totalPages: pagination?.pages || 1,
+    pageSize,
+    pageNumbers: getPageNumbers(),
     // Actions
     setPage: handlePageChange,
     performSearch,

@@ -1,26 +1,22 @@
 import React from 'react';
 import { RecipeListProps } from '@/types';
+import RecipeListSkeleton from './RecipeListSkeleton';
 
 const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, totalResults, isMobile, onRecipeClick }) => {
   if (isLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
-        <div className="loading-spinner" style={{ width: "24px", height: "24px", margin: "0 auto 1rem auto" }}></div>
-        <p style={{ color: "#a0a0a0" }}>Loading recipes...</p>
-      </div>
-    );
+    return <RecipeListSkeleton count={12} isMobile={isMobile} />;
   }
 
   if (recipes.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
+      <div className="fade-in" style={{ textAlign: "center", padding: "2rem" }}>
         <p style={{ color: "#a0a0a0" }}>No recipes found. Try different ingredients or fewer filters.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+    <div className="fade-in" style={{ textAlign: "center", marginBottom: "1rem" }}>
       <div style={{ fontSize: "16px", fontWeight: "500", color: "#ffffff", marginBottom: "1rem" }}>
         {totalResults} {totalResults === 1 ? 'Recipe' : 'Recipes'} Found
       </div>
@@ -38,10 +34,12 @@ const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, totalResult
               borderRadius: "16px", 
               padding: "1.5rem", 
               textAlign: "left",
-              transition: "transform 0.2s ease, box-shadow 0.2s ease",
-              cursor: "pointer"
+              transition: "transform 0.3s ease, box-shadow 0.3s ease",
+              cursor: "pointer",
+              animationDelay: `${index * 0.05}s`,
+              animationFillMode: "both"
             }}
-            className="recipe-card"
+            className="recipe-card fade-in"
             onClick={() => onRecipeClick(recipe)}
           >
             <h3 style={{ 
@@ -71,7 +69,8 @@ const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, totalResult
                     height: "100%",
                     width: `${recipe.matchPercentage}%`,
                     backgroundColor: recipe.matchPercentage && recipe.matchPercentage > 80 ? "#8ab4f8" : "#f28b82",
-                    borderRadius: "3px"
+                    borderRadius: "3px",
+                    transition: "width 0.5s ease-out"
                   }}/>
                 </div>
                 <span style={{ color: "#a0a0a0", fontSize: "12px", whiteSpace: "nowrap" }}>
