@@ -113,55 +113,58 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
     return ingredientsArray.map(ing => ing.toLowerCase());
   };
   
-  // Core search function
-  const performSearch = useCallback((page = currentPage, manual = false) => {
+  // Core search function — ingredientsOverride lets callers pass ingredients directly
+  // without waiting for React state to update (fixes race condition with image detection)
+  const performSearch = useCallback((page = currentPage, manual = false, ingredientsOverride?: string) => {
+    const effectiveIngredients = ingredientsOverride ?? ingredients;
+
     // Generate consistent cache key for all search params
-    const searchParams = `${ingredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}-${page}`;
-    
+    const searchParams = `${effectiveIngredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}-${page}`;
+
     // Skip duplicate searches and rate limited situations
     if (isRateLimited) {
       return;
     }
-    
+
     // If this is an auto-search (not manual) and the params are the same as last search
     // or it's been less than 2 seconds since last manual search, skip it
-    if (!manual && 
-        (searchParams === lastSearchParamsRef.current || 
+    if (!manual &&
+        (searchParams === lastSearchParamsRef.current ||
          Date.now() - lastManualSearchRef.current < 2000)) {
       return;
     }
-    
+
     // For manual searches, update the timestamp
     if (manual) {
       lastManualSearchRef.current = Date.now();
     }
-    
+
     // Reset recipes state for new searches
     if (page === 1) {
       setRecipes([]);
       setFilteredRecipes([]);
     }
-    
+
     // Always cancel any pending search request
     if (searchRequestRef.current) {
       clearTimeout(searchRequestRef.current);
     }
-    
+
     // Check if we have valid ingredients
-    if (!ingredients.trim()) {
+    if (!effectiveIngredients.trim()) {
       return;
     }
-    
+
     // Set up a new search with debounce
     searchRequestRef.current = setTimeout(async () => {
       // Update the last search params
       lastSearchParamsRef.current = searchParams;
-      
+
       // Clear the request ref as we're now executing
       searchRequestRef.current = null;
-      
+
       // Use cached results if available
-      const cacheKey = `${ingredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}`;
+      const cacheKey = `${effectiveIngredients}-${JSON.stringify(dietaryFilters)}-${cookingTimeFilter}-${cuisineFilter}-${mealTypeFilter}`;
       const cachedData = searchCache[cacheKey];
       
       // If we have cached data less than 5 minutes old, use it
@@ -176,7 +179,7 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
       setErrorMessage('');
       
       try {
-        const ingredientsArray = processIngredients(ingredients);
+        const ingredientsArray = processIngredients(effectiveIngredients);
         
         if (ingredientsArray.length === 0) {
           setErrorMessage('Please enter at least one ingredient');

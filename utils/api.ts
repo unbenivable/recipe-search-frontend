@@ -191,38 +191,50 @@ export const searchImagesAPI = async (query: string): Promise<{ images: string[]
   }
 };
 
-// Function to detect ingredients from image
+// Function to detect ingredients from image — no retries, fail fast
 export const detectIngredientsAPI = async (formData: FormData): Promise<string[]> => {
   try {
-    const response = await fetchWithRetry(() => 
-      axios.post<{ ingredients: string[] }>(
-        '/api/detectIngredients', 
-        formData, 
-        {
-          headers: { 
-            'Content-Type': 'multipart/form-data' 
-          }
-        }
-      )
+    const response = await axios.post<{ ingredients: string[]; error?: string; code?: string }>(
+      '/api/detectIngredients',
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 35000 // 35s — slightly longer than the backend's 30s timeout
+      }
     );
-    
-    if (response.data && response.data.ingredients) {
+
+    if (response.data && response.data.ingredients && response.data.ingredients.length > 0) {
       return response.data.ingredients;
     } else {
       throw new RecipeAPIError(
         ErrorCodes.NOT_FOUND,
-        'No ingredients could be detected in the image',
+        response.data?.error || 'No ingredients could be detected in the image',
         response.data
       );
     }
   } catch (error) {
+    // Re-throw RecipeAPIError as-is
+    if (error instanceof RecipeAPIError) {
+      throw error;
+    }
+
     if (axios.isAxiosError(error)) {
+      const data = error.response?.data;
+      const code = data?.code || '';
+      const message = data?.error || error.message;
+
       throw new RecipeAPIError(
+        code === 'FILE_TOO_LARGE' ? ErrorCodes.VALIDATION_ERROR :
+        code === 'UNSUPPORTED_FORMAT' ? ErrorCodes.VALIDATION_ERROR :
+        code === 'TIMEOUT' ? ErrorCodes.NETWORK_ERROR :
         ErrorCodes.API_ERROR,
-        'Error detecting ingredients: ' + (error.response?.data?.message || error.message),
-        error
+        message,
+        { code, ...data }
       );
     }
+
     throw new RecipeAPIError(ErrorCodes.UNKNOWN, 'Error detecting ingredients', error);
   }
 }; 

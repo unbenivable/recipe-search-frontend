@@ -485,9 +485,17 @@ body {
   transition: border-color 0.2s ease, background-color 0.2s ease;
 }
 
-.uploader-dropzone:hover {
+.uploader-dropzone:hover,
+.uploader-dropzone-active {
   border-color: var(--accent);
   background: var(--accent-light);
+}
+
+.uploader-hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  opacity: 0.7;
 }
 
 .uploader-icon {

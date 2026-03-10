@@ -47,7 +47,7 @@ export interface SearchHookState {
   pageSize: number;
   pageNumbers: (number | string)[];
   setPage: (page: number) => void;
-  performSearch: (page?: number, manual?: boolean) => void;
+  performSearch: (page?: number, manual?: boolean, ingredientsOverride?: string) => void;
   resetFilters: () => void;
 }
 
@@ -69,6 +69,7 @@ export interface ImageUploaderProps {
   setImagePreview: (preview: string) => void;
   handleDetectIngredients: () => void;
   isDetectingIngredients: boolean;
+  onError: (message: string) => void;
 }
 
 export interface SearchModeSelectorProps {

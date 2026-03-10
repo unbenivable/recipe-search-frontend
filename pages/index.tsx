@@ -73,9 +73,14 @@ const Home: React.FC = () => {
       const detectedIngredients = await detectIngredientsAPI(formData);
 
       if (detectedIngredients && detectedIngredients.length > 0) {
-        setIngredients(detectedIngredients.join(', '));
+        const ingredientString = detectedIngredients.join(', ');
+        setIngredients(ingredientString);
         setSearchMode('recipe');
-        handleSearch();
+        // Pass ingredients directly — don't rely on async state update
+        performSearch(1, true, ingredientString);
+        // Clear image on success
+        setSelectedImage(null);
+        setImagePreview('');
       } else {
         setErrorMessage('No ingredients detected in the image. Please try a different image.');
       }
@@ -83,19 +88,27 @@ const Home: React.FC = () => {
       let errorMsg = 'Error detecting ingredients. Please try again.';
 
       if (error && typeof error === 'object' && 'name' in error && error.name === 'RecipeAPIError') {
-        const apiError = error as unknown as { message: string };
-        errorMsg = apiError.message;
+        const apiError = error as unknown as { message: string; details?: { code?: string } };
+        // Use specific error messages from the API
+        if (apiError.details && apiError.details.code === 'FILE_TOO_LARGE') {
+          errorMsg = 'Image is too large. Please use an image under 4MB.';
+        } else if (apiError.details && apiError.details.code === 'UNSUPPORTED_FORMAT') {
+          errorMsg = 'Unsupported image format. Please use JPEG, PNG, or WebP.';
+        } else if (apiError.details && apiError.details.code === 'TIMEOUT') {
+          errorMsg = 'Image analysis timed out. Please try a smaller or simpler image.';
+        } else {
+          errorMsg = apiError.message;
+        }
       } else if (error && typeof error === 'object' && 'response' in error &&
         error.response && typeof error.response === 'object' && 'data' in error.response &&
         error.response.data && typeof error.response.data === 'object' && 'error' in error.response.data) {
-        errorMsg = String(error.response.data.error);
+        errorMsg = String((error.response as { data: { error: string } }).data.error);
       }
 
       setErrorMessage(errorMsg);
+      // Don't clear image on error — let user retry
     } finally {
       setIsDetectingIngredients(false);
-      setSelectedImage(null);
-      setImagePreview('');
     }
   };
 
@@ -153,6 +166,7 @@ const Home: React.FC = () => {
               setImagePreview={setImagePreview}
               handleDetectIngredients={handleDetectIngredients}
               isDetectingIngredients={isDetectingIngredients}
+              onError={setErrorMessage}
             />
           ) : (
             <>
