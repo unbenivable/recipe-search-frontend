@@ -1,134 +1,62 @@
 import React from 'react';
 import { PaginationProps } from '@/types';
 
-const Pagination: React.FC<PaginationProps> = ({ 
-  currentPage, 
-  totalPages, 
+const ChevronLeft = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+
+const ChevronRight = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 6 15 12 9 18" />
+  </svg>
+);
+
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
   pageNumbers,
-  setPage 
+  setPage
 }) => {
   if (totalPages <= 1) return null;
-  
+
   return (
-    <div className="pagination-container fade-in" style={{ 
-      display: "flex", 
-      justifyContent: "center", 
-      alignItems: "center", 
-      marginTop: "2rem",
-      gap: "0.25rem",
-      userSelect: "none"
-    }}>
+    <div className="pagination fade-in">
       <button
-        onClick={() => setPage(1)}
-        disabled={currentPage === 1}
-        aria-label="First page"
-        style={{
-          padding: "0.5rem 0.75rem",
-          backgroundColor: currentPage === 1 ? "#3e3e3e" : "#4285f4",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: currentPage === 1 ? "not-allowed" : "pointer",
-          opacity: currentPage === 1 ? 0.7 : 1,
-          fontWeight: 500,
-          transition: "all 0.2s ease-in-out",
-          fontSize: "14px"
-        }}
-      >
-        ⟪
-      </button>
-      
-      <button
+        className="page-btn page-btn-nav"
         onClick={() => setPage(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
-        style={{
-          padding: "0.5rem 0.75rem",
-          backgroundColor: currentPage === 1 ? "#3e3e3e" : "#4285f4",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: currentPage === 1 ? "not-allowed" : "pointer",
-          opacity: currentPage === 1 ? 0.7 : 1,
-          fontWeight: 500,
-          transition: "all 0.2s ease-in-out",
-          marginRight: "0.5rem",
-          fontSize: "14px"
-        }}
       >
-        ❮
+        <ChevronLeft />
+        Prev
       </button>
-      
+
       {pageNumbers.map((page, i) => (
         <button
           key={i}
+          className={`page-btn ${currentPage === page ? 'active' : ''}`}
           onClick={() => typeof page === 'number' ? setPage(page) : null}
           disabled={typeof page !== 'number'}
           aria-label={`Page ${page}`}
           aria-current={currentPage === page ? "page" : undefined}
-          style={{
-            width: "36px",
-            height: "36px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: currentPage === page ? "#4285f4" : "#2e2e2e",
-            color: currentPage === page ? "white" : "#d0d0d0",
-            border: "none",
-            borderRadius: "8px",
-            cursor: typeof page === 'number' ? "pointer" : "default",
-            fontWeight: currentPage === page ? 600 : 400,
-            transition: "all 0.2s ease-in-out",
-            fontSize: "14px",
-            margin: "0 2px"
-          }}
         >
           {page}
         </button>
       ))}
-      
+
       <button
+        className="page-btn page-btn-nav"
         onClick={() => setPage(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
-        style={{
-          padding: "0.5rem 0.75rem",
-          backgroundColor: currentPage === totalPages ? "#3e3e3e" : "#4285f4",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-          opacity: currentPage === totalPages ? 0.7 : 1,
-          fontWeight: 500,
-          transition: "all 0.2s ease-in-out",
-          marginLeft: "0.5rem",
-          fontSize: "14px"
-        }}
       >
-        ❯
-      </button>
-      
-      <button
-        onClick={() => setPage(totalPages)}
-        disabled={currentPage === totalPages}
-        aria-label="Last page"
-        style={{
-          padding: "0.5rem 0.75rem",
-          backgroundColor: currentPage === totalPages ? "#3e3e3e" : "#4285f4",
-          color: "white",
-          border: "none",
-          borderRadius: "8px",
-          cursor: currentPage === totalPages ? "not-allowed" : "pointer",
-          opacity: currentPage === totalPages ? 0.7 : 1,
-          fontWeight: 500,
-          transition: "all 0.2s ease-in-out",
-          fontSize: "14px"
-        }}
-      >
-        ⟫
+        Next
+        <ChevronRight />
       </button>
     </div>
   );
 };
 
-export default Pagination; 
+export default Pagination;

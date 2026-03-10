@@ -98,8 +98,6 @@ export default async function handler(req, res) {
           score: label.score
         }));
       
-      console.log('Detected labels:', allLabels);
-      
       // Function to check if an ingredient is a variant of another
       const isVariantOf = (ingredient, otherIngredient) => {
         // Clean and normalize both strings
@@ -181,7 +179,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ ingredients: uniqueIngredients });
     });
   } catch (error) {
-    console.error('Error detecting ingredients:', error);
     return res.status(500).json({ error: 'Failed to detect ingredients', details: error.message });
   }
 } 

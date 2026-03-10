@@ -1,13 +1,13 @@
 import React, { useRef } from 'react';
 import { ImageUploaderProps } from '@/types';
 
-const ImageUploader: React.FC<ImageUploaderProps> = ({ 
-  selectedImage, 
-  setSelectedImage, 
-  imagePreview, 
-  setImagePreview, 
+const ImageUploader: React.FC<ImageUploaderProps> = ({
+  selectedImage,
+  setSelectedImage,
+  imagePreview,
+  setImagePreview,
   handleDetectIngredients,
-  isDetectingIngredients 
+  isDetectingIngredients
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -18,121 +18,67 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       setSelectedImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
   const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    fileInputRef.current?.click();
   };
 
   return (
-    <div style={{
-      maxWidth: "500px",
-      margin: "0 auto 2rem auto",
-      backgroundColor: "#2e2e2e",
-      borderRadius: "16px",
-      padding: "1.5rem",
-      textAlign: "center"
-    }}>
+    <div className="uploader">
       <input
         type="file"
         ref={fileInputRef}
         onChange={handleImageSelect}
         accept="image/*"
-        style={{ display: "none" }}
+        style={{ display: 'none' }}
       />
-      
+
       {!imagePreview ? (
-        <div style={{
-          padding: "2rem",
-          border: "2px dashed #4285f4",
-          borderRadius: "12px",
-          cursor: "pointer"
-        }} onClick={triggerFileInput}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ margin: "0 auto 1rem auto" }}>
-            <path d="M19 7V5H5v14h2v2H3V3h18v4h-2zm-4 12v-2h4v-4h2v6h-6zm-6-6H7V5h8v2h2V3H5v14h4v2H3V3h18v6h-2V5h-8v8z" fill="#4285f4"/>
-          </svg>
-          <p style={{ fontSize: "16px", color: "#ffffff", marginBottom: "0.5rem" }}>
-            Click to upload an image
-          </p>
-          <p style={{ fontSize: "14px", color: "#a0a0a0" }}>
-            Upload a clear photo of your ingredients
-          </p>
+        <div className="uploader-dropzone" onClick={triggerFileInput}>
+          <div className="uploader-icon">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <circle cx="12" cy="13" r="4" />
+            </svg>
+          </div>
+          <p className="uploader-title">Upload a photo</p>
+          <p className="uploader-subtitle">Take a clear photo of your ingredients</p>
         </div>
       ) : (
-        <div style={{ position: "relative" }}>
-          <img 
-            src={imagePreview} 
-            alt="Selected" 
-            style={{ 
-              width: "100%", 
-              borderRadius: "12px",
-              marginBottom: "1rem" 
-            }} 
-          />
+        <div className="uploader-preview">
+          <img src={imagePreview} alt="Selected food" />
           <button
-            onClick={() => {
-              setSelectedImage(null);
-              setImagePreview('');
-            }}
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              width: "32px",
-              height: "32px",
-              borderRadius: "50%",
-              backgroundColor: "rgba(0,0,0,0.6)",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
+            className="uploader-preview-remove"
+            onClick={() => { setSelectedImage(null); setImagePreview(''); }}
+            aria-label="Remove image"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z" fill="white"/>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
         </div>
       )}
-      
+
       <button
+        className="detect-btn"
         onClick={handleDetectIngredients}
         disabled={!selectedImage || isDetectingIngredients}
-        style={{
-          width: "100%",
-          padding: "0.85rem",
-          backgroundColor: !selectedImage ? "#3e3e3e" : "#4285f4",
-          color: "white",
-          border: "none",
-          borderRadius: "12px",
-          fontSize: "16px",
-          fontWeight: "500",
-          cursor: !selectedImage ? "not-allowed" : "pointer",
-          marginTop: imagePreview ? "1rem" : "0",
-          opacity: !selectedImage ? 0.7 : 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "8px"
-        }}
       >
         {isDetectingIngredients ? (
           <>
-            <div className="loading-spinner" style={{ width: "20px", height: "20px" }}></div>
+            <div className="loading-spinner" />
             <span>Detecting ingredients...</span>
           </>
         ) : (
           <>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" fill="white"/>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20 6 9 17 4 12" />
             </svg>
             <span>Detect Ingredients</span>
           </>
@@ -142,4 +88,4 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   );
 };
 
-export default ImageUploader; 
+export default ImageUploader;

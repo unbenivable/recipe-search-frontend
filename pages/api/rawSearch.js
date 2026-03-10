@@ -7,8 +7,8 @@ export const config = {
   },
 };
 
-// Actual backend URL - hardcoded for reliability 
-const BACKEND_URL = 'https://web-production-9df5.up.railway.app/search';
+// Backend URL from environment variable
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://ingreddit-api.onrender.com/search';
 
 // Simple in-memory cache
 const cache = new Map();
@@ -56,9 +56,6 @@ export default async function handler(req, res) {
       requestCounts.set(clientIp, data);
     }
     
-    // Log and validate the incoming request
-    console.log('Received request body:', req.body);
-    
     // Validate required request fields
     if (!req.body || typeof req.body !== 'object') {
       return res.status(400).json({
@@ -97,7 +94,6 @@ export default async function handler(req, res) {
     if (cache.has(cacheKey)) {
       const cachedData = cache.get(cacheKey);
       if (now - cachedData.timestamp < CACHE_TTL) {
-        console.log('Using cached search results');
         return res.status(200).json(cachedData.data);
       } else {
         // Expired cache entry
@@ -106,7 +102,6 @@ export default async function handler(req, res) {
     }
     
     // Forward request to the backend
-    console.log('Forwarding request to backend:', normalizedBody);
     const response = await axios.post(
       BACKEND_URL,
       normalizedBody,
@@ -126,17 +121,6 @@ export default async function handler(req, res) {
     
     return res.status(response.status).json(response.data);
   } catch (error) {
-    console.error('Error proxying search request:', error);
-    
-    // Enhanced error logging
-    if (error.response) {
-      console.error('Backend response error:', error.response.status, error.response.data);
-    } else if (error.request) {
-      console.error('No response received from backend');
-    } else {
-      console.error('Request setup error:', error.message);
-    }
-    
     // Handle different types of errors appropriately
     if (error.response) {
       // The request was made and the server responded with a status code outside of 2xx

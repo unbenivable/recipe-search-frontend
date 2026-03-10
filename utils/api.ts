@@ -109,9 +109,6 @@ export const fetchRecipesFromAPI = async (requestPayload: SearchRequest): Promis
     if (requestPayload.cuisine) normalizedPayload.cuisine = requestPayload.cuisine;
     if (requestPayload.mealType) normalizedPayload.mealType = requestPayload.mealType;
 
-    // Log the exact payload for debugging
-    console.log('Sending search request with payload:', normalizedPayload);
-
     // Use the fetchWithRetry utility for better resilience
     return await fetchWithRetry(async () => {
       const response = await axios.post<SearchResponse>(
@@ -127,8 +124,6 @@ export const fetchRecipesFromAPI = async (requestPayload: SearchRequest): Promis
       return response.data;
     });
   } catch (error) {
-    console.error('Error in fetchRecipesFromAPI:', error);
-    
     // Structured error handling with custom error class
     if (axios.isAxiosError(error)) {
       if (error.code === 'ECONNABORTED' || !error.response) {
@@ -199,8 +194,6 @@ export const searchImagesAPI = async (query: string): Promise<{ images: string[]
 // Function to detect ingredients from image
 export const detectIngredientsAPI = async (formData: FormData): Promise<string[]> => {
   try {
-    console.log('Sending image for ingredient detection');
-    
     const response = await fetchWithRetry(() => 
       axios.post<{ ingredients: string[] }>(
         '/api/detectIngredients', 
@@ -214,10 +207,8 @@ export const detectIngredientsAPI = async (formData: FormData): Promise<string[]
     );
     
     if (response.data && response.data.ingredients) {
-      console.log('Detected ingredients:', response.data.ingredients);
       return response.data.ingredients;
     } else {
-      console.error('No ingredients detected or unexpected response format:', response.data);
       throw new RecipeAPIError(
         ErrorCodes.NOT_FOUND,
         'No ingredients could be detected in the image',
@@ -225,7 +216,6 @@ export const detectIngredientsAPI = async (formData: FormData): Promise<string[]
       );
     }
   } catch (error) {
-    console.error('Error in detectIngredientsAPI:', error);
     if (axios.isAxiosError(error)) {
       throw new RecipeAPIError(
         ErrorCodes.API_ERROR,

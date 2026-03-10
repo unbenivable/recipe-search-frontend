@@ -52,6 +52,12 @@ next-env.d.ts
 # typescript
 *.tsbuildinfo
 
+# IDE specific files
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
 # browser-tools-mcp
 browser-tools-mcp/
-.cursor/

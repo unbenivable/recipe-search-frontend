@@ -3,17 +3,15 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
-import ThemeProvider from '@/components/ThemeProvider';
 
 export default function RecipePage() {
   const router = useRouter();
-  const { id, title } = router.query;
+  const { id } = router.query;
   const [recipe, setRecipe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // If we have recipe data in sessionStorage, use it
     if (typeof window !== 'undefined') {
       try {
         const storedRecipes = sessionStorage.getItem('recipeData');
@@ -27,7 +25,6 @@ export default function RecipePage() {
           }
         }
 
-        // If we have encoded recipe data in the URL
         if (router.query.data) {
           try {
             const decodedData = JSON.parse(decodeURIComponent(router.query.data));
@@ -35,29 +32,25 @@ export default function RecipePage() {
             setLoading(false);
             return;
           } catch (err) {
-            console.error('Failed to parse recipe data from URL:', err);
+            // Failed to parse recipe data from URL
           }
         }
 
         setError('Recipe not found');
         setLoading(false);
       } catch (err) {
-        console.error('Error loading recipe:', err);
         setError('Failed to load recipe');
         setLoading(false);
       }
     }
   }, [router.query, id]);
 
-  // Handle share click
   const handleShare = async () => {
     if (!recipe) return;
-    
-    // Create a shareable URL
+
     const recipeData = encodeURIComponent(JSON.stringify(recipe));
     const shareUrl = `${window.location.origin}/recipe/${recipe.id}?data=${recipeData}`;
-    
-    // Try to use the Web Share API if available
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -67,199 +60,150 @@ export default function RecipePage() {
         });
         return;
       } catch (err) {
-        console.log('Error sharing:', err);
         // Fall back to clipboard
       }
     }
-    
-    // Fallback: Copy to clipboard
+
     try {
       await navigator.clipboard.writeText(shareUrl);
       alert('Link copied to clipboard!');
     } catch (err) {
-      console.error('Failed to copy:', err);
-      // If clipboard API fails, show the URL and ask user to copy manually
       alert(`Please copy this link manually: ${shareUrl}`);
     }
   };
 
-  const Layout = ({ children }) => (
-    <ThemeProvider>
-      <div style={{ 
-        background: "var(--background)", 
-        color: "var(--foreground)", 
-        minHeight: "100vh",
-        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-      }}>
-        {children}
-        
-        <footer style={{
-          marginTop: "auto",
-          padding: "1.5rem",
-          textAlign: "center",
-          position: "relative",
-          color: "#8e8e93",
-          fontSize: "14px"
-        }}
-        className="footer"
-        >
-          <div className="footer-divider" style={{
-            position: "absolute",
-            top: 0,
-            left: "5%",
-            right: "5%",
-            height: "1px"
-          }} />
-          <p style={{ marginBottom: "0.75rem", paddingTop: "1.5rem" }}>Niv & Gal © 2025</p>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "13px" }}>Dark mode:</span>
-            <ThemeSwitcher />
-          </div>
-        </footer>
-      </div>
-    </ThemeProvider>
-  );
-
   if (loading) {
     return (
-      <Layout>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          height: '100vh',
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              width: "40px", 
-              height: "40px", 
-              margin: "0 auto 1rem auto",
-              border: "4px solid var(--card-border)",
-              borderTop: "4px solid var(--primary)",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite"
-            }}></div>
-            <p>Loading recipe...</p>
-            <style jsx>{`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}</style>
-          </div>
+      <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="loading-spinner" style={{ width: 32, height: 32, borderColor: 'var(--border-primary)', borderTopColor: 'var(--accent)', margin: '0 auto 1rem' }} />
+          <p style={{ color: 'var(--text-secondary)' }}>Loading recipe...</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   if (error || !recipe) {
     return (
-      <Layout>
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          justifyContent: 'center', 
-          alignItems: 'center',
-          height: '100vh',
-          padding: '1rem'
-        }}>
-          <h1 style={{ marginBottom: '1rem', fontSize: '24px' }}>Recipe Not Found</h1>
-          <p style={{ marginBottom: '2rem' }}>{error || 'The requested recipe could not be found.'}</p>
+      <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+            Recipe Not Found
+          </h1>
+          <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>
+            {error || 'The requested recipe could not be found.'}
+          </p>
           <Link href="/" style={{
-            padding: "0.75rem 1.5rem",
-            backgroundColor: "var(--primary)",
-            color: "white",
-            borderRadius: "8px",
-            textDecoration: "none",
-            fontWeight: "500"
+            display: 'inline-block',
+            padding: '0.75rem 1.5rem',
+            background: 'var(--accent)',
+            color: 'white',
+            borderRadius: 'var(--radius-lg)',
+            textDecoration: 'none',
+            fontWeight: 600,
+            fontSize: '0.9375rem'
           }}>
-            Return to Recipe Search
+            Back to Search
           </Link>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
-      <div style={{ 
-        padding: "2rem",
-        maxWidth: "900px",
-        margin: "0 auto",
-      }}>
-        <Head>
-          <title>{recipe.title} | Recipe Finder</title>
-          <meta name="description" content={`Recipe for ${recipe.title} with ${recipe.ingredients.slice(0, 3).join(', ')}`} />
-        </Head>
+    <div className="app-container">
+      <Head>
+        <title>{recipe.title} | Ingreddit</title>
+        <meta name="description" content={`Recipe for ${recipe.title} with ${recipe.ingredients.slice(0, 3).join(', ')}`} />
+      </Head>
 
-        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" style={{
-            display: 'flex',
-            alignItems: 'center',
-            color: 'var(--primary)',
-            textDecoration: 'none',
-            fontSize: '16px',
-            fontWeight: '500'
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '6px' }}>
-              <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" fill="currentColor"/>
-            </svg>
-            Back to Search
-          </Link>
-          
-          <button 
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+        <Link href="/" style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          color: 'var(--accent)',
+          textDecoration: 'none',
+          fontSize: '0.9375rem',
+          fontWeight: 500
+        }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+          Back
+        </Link>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
             onClick={handleShare}
             style={{
-              backgroundColor: 'transparent',
+              background: 'none',
               border: 'none',
-              color: 'var(--primary)',
-              fontSize: '16px',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: 'var(--radius-sm)',
               display: 'flex',
               alignItems: 'center',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500'
+              gap: '6px',
+              fontSize: '0.875rem',
+              fontWeight: 500
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '6px' }}>
-              <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92 1.61 0 2.92-1.31 2.92-2.92s-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+              <polyline points="16 6 12 2 8 6" />
+              <line x1="12" y1="2" x2="12" y2="15" />
             </svg>
-            Share Recipe
+            Share
           </button>
+          <ThemeSwitcher />
         </div>
+      </div>
 
-        <article style={{ 
-          background: "var(--card-bg)", 
-          borderRadius: "20px", 
-          padding: "2rem",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.08)" 
-        }}>
-          <h1 style={{ fontSize: '32px', marginBottom: '1.5rem', lineHeight: '1.2' }}>{recipe.title}</h1>
-          
+      <article style={{
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-primary)',
+        borderRadius: 'var(--radius-xl)',
+        overflow: 'hidden'
+      }}>
+        <div style={{ padding: '2rem' }}>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+            {recipe.title}
+          </h1>
+
           <section style={{ marginBottom: '2rem' }}>
-            <h2 style={{ fontSize: '22px', marginBottom: '1rem', color: 'var(--primary)' }}>Ingredients</h2>
-            <ul style={{ fontSize: '18px', paddingLeft: '1.5rem', lineHeight: '1.6' }}>
+            <h2 className="modal-section-title">Ingredients</h2>
+            <div className="modal-ingredients-grid">
               {recipe.ingredients.map((ingredient, index) => (
-                <li key={index}>{ingredient}</li>
+                <div key={index} className="modal-ingredient-item">{ingredient}</div>
               ))}
-            </ul>
-          </section>
-          
-          <section>
-            <h2 style={{ fontSize: '22px', marginBottom: '1rem', color: 'var(--primary)' }}>Directions</h2>
-            <div style={{ fontSize: '18px', lineHeight: '1.6' }}>
-              {Array.isArray(recipe.directions) ? (
-                recipe.directions.map((step, index) => (
-                  <p key={index} style={{ marginBottom: '1rem' }}>{step}</p>
-                ))
-              ) : (
-                <p>{recipe.directions || 'No directions available'}</p>
-              )}
             </div>
           </section>
-        </article>
-      </div>
-    </Layout>
+
+          <section>
+            <h2 className="modal-section-title">Directions</h2>
+            {Array.isArray(recipe.directions) ? (
+              recipe.directions.map((step, index) => (
+                <div key={index} className="modal-direction-step">
+                  <div className="modal-step-number">{index + 1}</div>
+                  <div className="modal-step-text">{step}</div>
+                </div>
+              ))
+            ) : (
+              <p style={{ color: 'var(--text-secondary)' }}>{recipe.directions || 'No directions available'}</p>
+            )}
+          </section>
+        </div>
+      </article>
+
+      <footer className="footer">
+        <div className="footer-content">
+          <span>Niv & Gal &copy; {new Date().getFullYear()}</span>
+          <span className="footer-separator" />
+          <ThemeSwitcher />
+        </div>
+      </footer>
+    </div>
   );
-} 
+}

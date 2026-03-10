@@ -21,7 +21,6 @@ export const storeRecipe = (recipe) => {
     
     return recipe;
   } catch (err) {
-    console.error('Error storing recipe data:', err);
     return recipe;
   }
 };
@@ -56,7 +55,6 @@ export const shareRecipe = async (recipe) => {
       });
       return true;
     } catch (err) {
-      console.log('Error sharing:', err);
       // Fall back to clipboard
     }
   }
@@ -67,7 +65,6 @@ export const shareRecipe = async (recipe) => {
     alert('Link copied to clipboard!');
     return true;
   } catch (err) {
-    console.error('Failed to copy:', err);
     // If clipboard API fails, show the URL and ask user to copy manually
     alert(`Please copy this link manually: ${shareUrl}`);
     return false;

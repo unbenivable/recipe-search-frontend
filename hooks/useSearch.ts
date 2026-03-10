@@ -120,7 +120,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
     
     // Skip duplicate searches and rate limited situations
     if (isRateLimited) {
-      console.log('⚠️ Search aborted: Rate limited');
       return;
     }
     
@@ -129,7 +128,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
     if (!manual && 
         (searchParams === lastSearchParamsRef.current || 
          Date.now() - lastManualSearchRef.current < 2000)) {
-      console.log('🔄 Skipping duplicate auto-search');
       return;
     }
     
@@ -151,14 +149,11 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
     
     // Check if we have valid ingredients
     if (!ingredients.trim()) {
-      console.log('❌ Search aborted: Empty ingredients');
       return;
     }
     
     // Set up a new search with debounce
     searchRequestRef.current = setTimeout(async () => {
-      console.log(`🔍 ${manual ? 'Manual' : 'Auto'} search initiated with:`, ingredients);
-      
       // Update the last search params
       lastSearchParamsRef.current = searchParams;
       
@@ -171,7 +166,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
       
       // If we have cached data less than 5 minutes old, use it
       if (cachedData && (Date.now() - cachedData.timestamp < 5 * 60 * 1000)) {
-        console.log('📦 Using cached search results:', cachedData.recipes.length, 'recipes');
         setRecipes(cachedData.recipes);
         setPagination(cachedData.pagination);
         setTotalResults(cachedData.totalResults);
@@ -229,8 +223,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
           ...additionalFilters
         };
 
-        console.log('🔍 Sending search payload:', requestPayload);
-        
         // Make the API request
         const data = await fetchRecipesFromAPI(requestPayload);
         
@@ -282,7 +274,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
           setErrorMessage(errorMsg);
         }
       } catch (error: any) {
-        console.error('❌ Error fetching recipes:', error);
         setRecipes([]);
         
         // Increment search attempts
@@ -310,7 +301,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
           // Handle validation errors
           const errorMsg = 'Invalid search request. Please check your search parameters.';
           setErrorMessage(errorMsg);
-          console.error('Validation error details:', error.response.data);
         } else {
           // Other error
           setErrorMessage(`Error searching for recipes: ${error.message}`);
@@ -325,7 +315,6 @@ export const useSearch = (initialIngredients = ''): SearchHookState => {
   // Initialize auto-search after mount
   useEffect(() => {
     if (!autoSearchEnabledRef.current) {
-      console.log('Component mounted - auto-search enabled');
       autoSearchEnabledRef.current = true;
       // Don't perform search on initial mount
       return;

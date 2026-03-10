@@ -3,226 +3,103 @@ import { RecipeDetailViewProps } from '@/types';
 
 const RecipeDetailView: React.FC<RecipeDetailViewProps> = ({ recipe, onClose }) => {
   if (!recipe) return null;
-  
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only close if the click was directly on the backdrop, not on the content
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget) onClose();
   };
-  
-  // Add keyboard event listener for Escape key
+
   useEffect(() => {
     const handleEscKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
-    
     document.addEventListener('keydown', handleEscKey);
-    
-    // Disable body scroll while modal is open
     document.body.style.overflow = 'hidden';
-    
+
     return () => {
       document.removeEventListener('keydown', handleEscKey);
-      
-      // Re-enable body scroll when modal is closed
       document.body.style.overflow = 'auto';
     };
   }, [onClose]);
 
   return (
-    <div 
-      className="modal-backdrop"
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(0, 0, 0, 0.85)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 1000,
-        padding: "20px"
-      }}
-      onClick={handleBackdropClick}
-    >
-      <div 
-        className="modal-content"
-        style={{
-          backgroundColor: "#1e1e1e",
-          borderRadius: "20px",
-          width: "100%",
-          maxWidth: "800px",
-          maxHeight: "90vh",
-          overflow: "auto",
-          position: "relative",
-          boxShadow: "0 8px 30px rgba(0,0,0,0.3)",
-          padding: "30px"
-        }}
-      >
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute",
-            top: "20px",
-            right: "20px",
-            backgroundColor: "#2e2e2e",
-            color: "#ffffff",
-            border: "none",
-            borderRadius: "50%",
-            width: "36px",
-            height: "36px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            cursor: "pointer",
-            fontSize: "18px",
-            fontWeight: "bold"
-          }}
-        >
-          ✕
-        </button>
+    <div className="modal-backdrop" onClick={handleBackdropClick}>
+      <div className="modal-content">
+        <div className="modal-header">
+          <button className="modal-close" onClick={onClose} aria-label="Close">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
 
-        <h2 style={{ 
-          fontSize: "28px", 
-          fontWeight: "700", 
-          marginBottom: "1.5rem",
-          color: "#ffffff" 
-        }}>
-          {recipe.title}
-        </h2>
+          <h2 className="modal-title">{recipe.title}</h2>
 
-        {recipe.matchScore !== undefined && (
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            marginBottom: "1.5rem"
-          }}>
-            <div style={{
-              width: "200px",
-              height: "8px",
-              backgroundColor: "#3e3e3e",
-              borderRadius: "4px",
-              overflow: "hidden",
-              marginRight: "12px"
-            }}>
-              <div style={{
-                height: "100%",
-                width: `${recipe.matchPercentage}%`,
-                backgroundColor: recipe.matchPercentage && recipe.matchPercentage > 80 ? "#8ab4f8" : "#f28b82",
-                borderRadius: "4px"
-              }}/>
-            </div>
-            <span style={{ color: "#a0a0a0", fontSize: "14px" }}>
+          {recipe.matchScore !== undefined && (
+            <div
+              className={`modal-match-badge ${recipe.matchPercentage && recipe.matchPercentage > 80 ? 'recipe-card-match high' : 'recipe-card-match low'}`}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" />
+              </svg>
               {recipe.matchScore} of {recipe.ingredients.length} ingredients matched
-            </span>
-          </div>
-        )}
-
-        <div style={{ marginBottom: "2rem" }}>
-          <h3 style={{ 
-            fontSize: "20px", 
-            fontWeight: "600", 
-            marginBottom: "1rem",
-            color: "#ffffff"
-          }}>
-            Ingredients
-          </h3>
-          <ul style={{ 
-            paddingLeft: "1.5rem", 
-            color: "#d0d0d0",
-            fontSize: "16px",
-            lineHeight: 1.6
-          }}>
-            {recipe.ingredients.map((ing, i) => (
-              <li key={i} style={{ marginBottom: "0.5rem" }}>{ing}</li>
-            ))}
-          </ul>
+            </div>
+          )}
         </div>
 
-        {recipe.directions && (
-          <div>
-            <h3 style={{ 
-              fontSize: "20px", 
-              fontWeight: "600", 
-              marginBottom: "1rem",
-              color: "#ffffff"
-            }}>
-              Directions
-            </h3>
-            <ol style={{ 
-              paddingLeft: "1.5rem", 
-              color: "#d0d0d0",
-              fontSize: "16px",
-              lineHeight: 1.6
-            }}>
-              {recipe.directions.map((step, i) => (
-                <li key={i} style={{ marginBottom: "1rem" }}>{step}</li>
+        <div className="modal-body">
+          {/* Ingredients */}
+          <div className="modal-section">
+            <h3 className="modal-section-title">Ingredients</h3>
+            <div className="modal-ingredients-grid">
+              {recipe.ingredients.map((ing, i) => (
+                <div key={i} className="modal-ingredient-item">{ing}</div>
               ))}
-            </ol>
+            </div>
           </div>
-        )}
-        
-        {/* Nutritional Information */}
-        {recipe.nutrition && (
-          <div style={{ marginTop: "2rem" }}>
-            <h3 style={{ 
-              fontSize: "20px", 
-              fontWeight: "600", 
-              marginBottom: "1rem",
-              color: "#ffffff"
-            }}>
-              Nutrition Facts
-            </h3>
-            
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-              gap: "1rem",
-              backgroundColor: "#2e2e2e",
-              borderRadius: "12px",
-              padding: "1.5rem"
-            }}>
-              {Object.entries(recipe.nutrition).map(([key, value]) => (
-                <div key={key} style={{
-                  textAlign: "center",
-                  padding: "0.5rem"
-                }}>
-                  <div style={{ fontSize: "18px", fontWeight: "700", color: "#8ab4f8" }}>
-                    {value}
-                  </div>
-                  <div style={{ fontSize: "14px", color: "#a0a0a0", textTransform: "capitalize" }}>
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </div>
+
+          {/* Directions */}
+          {recipe.directions && (
+            <div className="modal-section">
+              <h3 className="modal-section-title">Directions</h3>
+              {recipe.directions.map((step, i) => (
+                <div key={i} className="modal-direction-step">
+                  <div className="modal-step-number">{i + 1}</div>
+                  <div className="modal-step-text">{step}</div>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-        
-        {!recipe.directions && (
-          <div style={{ 
-            padding: "1.5rem", 
-            backgroundColor: "#2e2e2e",
-            borderRadius: "12px",
-            textAlign: "center",
-            marginTop: "1rem"
-          }}>
-            <p style={{ color: "#a0a0a0", marginBottom: "0.5rem" }}>
-              Full directions not available for this recipe.
-            </p>
-            <p style={{ color: "#8ab4f8", fontSize: "14px" }}>
-              Try searching for "{recipe.title}" online for complete instructions.
-            </p>
-          </div>
-        )}
+          )}
+
+          {/* Nutrition */}
+          {recipe.nutrition && (
+            <div className="modal-section">
+              <h3 className="modal-section-title">Nutrition Facts</h3>
+              <div className="nutrition-grid">
+                {Object.entries(recipe.nutrition).map(([key, value]) => (
+                  <div key={key} className="nutrition-item">
+                    <div className="nutrition-value">{value}</div>
+                    <div className="nutrition-label">
+                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* No Directions Fallback */}
+          {!recipe.directions && (
+            <div className="modal-no-directions">
+              <p>Full directions not available for this recipe.</p>
+              <p className="search-hint-link">
+                Try searching for &ldquo;{recipe.title}&rdquo; online for complete instructions.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
-export default RecipeDetailView; 
+export default RecipeDetailView;

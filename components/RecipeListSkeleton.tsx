@@ -2,51 +2,24 @@ import React from 'react';
 
 interface RecipeListSkeletonProps {
   count?: number;
-  isMobile?: boolean;
 }
 
-const RecipeListSkeleton: React.FC<RecipeListSkeletonProps> = ({ 
-  count = 12,
-  isMobile = false
-}) => {
+const RecipeListSkeleton: React.FC<RecipeListSkeletonProps> = ({ count = 9 }) => {
   return (
     <div>
-      <div className="skeleton-text-lg skeleton" style={{ width: '180px', marginBottom: '16px' }}></div>
-      
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(300px, 1fr))", 
-        gap: "1.5rem"
-      }}>
+      <div className="results-header">
+        <div className="skeleton" style={{ width: 140, height: 16, margin: '0 auto', borderRadius: 8 }} />
+      </div>
+
+      <div className="recipe-grid">
         {Array(count).fill(0).map((_, index) => (
-          <div 
-            key={index} 
-            className="skeleton-card"
-            style={{ 
-              backgroundColor: "#2e2e2e", 
-              borderRadius: "16px", 
-              padding: "1.5rem", 
-              height: '240px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}
-          >
-            <div className="skeleton-text-lg skeleton" style={{ width: '70%' }}></div>
-            
-            <div className="skeleton" style={{ 
-              height: '6px',
-              marginTop: '8px',
-              marginBottom: '16px'
-            }}></div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div className="skeleton-text skeleton" style={{ width: '40%' }}></div>
-              
+          <div key={index} className="skeleton-card" style={{ height: 180, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="skeleton skeleton-text-lg" style={{ width: '65%' }} />
+            <div className="skeleton" style={{ height: 24, width: 120, borderRadius: 9999 }} />
+            <div className="skeleton skeleton-text" style={{ width: '30%', marginTop: 8 }} />
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {Array(4).fill(0).map((_, i) => (
-                <div key={i} className="skeleton-text skeleton" style={{ 
-                  width: `${Math.floor(Math.random() * 40) + 60}%` 
-                }}></div>
+                <div key={i} className="skeleton" style={{ height: 26, width: `${50 + Math.floor(Math.random() * 40)}px`, borderRadius: 9999 }} />
               ))}
             </div>
           </div>
@@ -56,4 +29,4 @@ const RecipeListSkeleton: React.FC<RecipeListSkeletonProps> = ({
   );
 };
 
-export default RecipeListSkeleton; 
+export default RecipeListSkeleton;

@@ -74,14 +74,12 @@ export interface ImageUploaderProps {
 export interface SearchModeSelectorProps {
   searchMode: string;
   setSearchMode: (mode: string) => void;
-  isMobile: boolean;
 }
 
 export interface RecipeListProps {
   recipes: Recipe[];
   isLoading: boolean;
   totalResults: number;
-  isMobile: boolean;
   onRecipeClick: (recipe: Recipe) => void;
 }
 
