@@ -44,21 +44,23 @@ export default async function handler(req, res) {
 
     const mimeType = fileObj.mimetype || 'image/jpeg';
 
-    // Reject unsupported formats
-    const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    if (!supportedTypes.includes(mimeType)) {
+    // Read file immediately, then clean up temp file in finally
+    let imageBuffer;
+    try {
+      // Reject unsupported formats
+      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!supportedTypes.includes(mimeType)) {
+        return res.status(400).json({
+          error: `Unsupported image format: ${mimeType}. Please use JPEG, PNG, or WebP.`,
+          code: 'UNSUPPORTED_FORMAT'
+        });
+      }
+
+      imageBuffer = fs.readFileSync(filePath);
+    } finally {
+      // Always clean up temp file
       fs.unlink(filePath, () => {});
-      return res.status(400).json({
-        error: `Unsupported image format: ${mimeType}. Please use JPEG, PNG, or WebP.`,
-        code: 'UNSUPPORTED_FORMAT'
-      });
     }
-
-    // Read file and forward to backend
-    const imageBuffer = fs.readFileSync(filePath);
-
-    // Clean up temp file
-    fs.unlink(filePath, () => {});
 
     // Build multipart form data for the backend
     const boundary = '----FormBoundary' + Math.random().toString(36).slice(2);
