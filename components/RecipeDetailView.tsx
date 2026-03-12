@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
 import { RecipeDetailViewProps } from '@/types';
 
-const RecipeDetailView: React.FC<RecipeDetailViewProps> = ({ recipe, onClose }) => {
+const RecipeDetailView: React.FC<RecipeDetailViewProps> = ({
+  recipe,
+  onClose,
+  isSaved,
+  onToggleSave
+}) => {
   if (!recipe) return null;
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -32,7 +37,24 @@ const RecipeDetailView: React.FC<RecipeDetailViewProps> = ({ recipe, onClose }) 
             </svg>
           </button>
 
-          <h2 className="modal-title">{recipe.title}</h2>
+          <div className="modal-title-row">
+            <h2 className="modal-title">{recipe.title}</h2>
+            {onToggleSave && (
+              <button
+                className={`recipe-heart modal-heart ${isSaved ? 'saved' : ''}`}
+                onClick={() => onToggleSave(recipe)}
+                aria-label={isSaved ? 'Unsave recipe' : 'Save recipe'}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24"
+                  fill={isSaved ? 'currentColor' : 'none'}
+                  stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+            )}
+          </div>
 
           {recipe.matchScore !== undefined && (
             <div

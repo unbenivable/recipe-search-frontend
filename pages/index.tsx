@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useSearch } from '@/hooks/useSearch';
+import { useAuth } from '@/hooks/useAuth';
+import { usePantry } from '@/hooks/usePantry';
+import { useSavedRecipes } from '@/hooks/useSavedRecipes';
 import { detectIngredientsAPI } from '@/utils/api';
 import { Recipe } from '@/types';
 
@@ -12,6 +15,10 @@ import RecipeList from '@/components/RecipeList';
 import RecipeDetailView from '@/components/RecipeDetailView';
 import Pagination from '@/components/Pagination';
 import Footer from '@/components/Footer';
+import AuthModal from '@/components/AuthModal';
+import UserMenu from '@/components/UserMenu';
+import PantryBar from '@/components/PantryBar';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 
 const Home: React.FC = () => {
   const [searchMode, setSearchMode] = useState<string>('recipe');
@@ -21,6 +28,14 @@ const Home: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const { user, loading: authLoading, signInWithEmail, signUpWithEmail, signOut } = useAuth();
+  const { pantryItems, addMultipleToPantry, removeFromPantry } = usePantry(user);
+  const { savedTitles, saveRecipe, unsaveRecipe, isSaved } = useSavedRecipes(user);
+
+  // Track whether we've auto-populated from pantry this session
+  const pantryPopulatedRef = useRef(false);
 
   const {
     recipes,
@@ -39,6 +54,14 @@ const Home: React.FC = () => {
     performSearch,
     resetFilters,
   } = useSearch();
+
+  // Auto-populate search bar from pantry on first load
+  useEffect(() => {
+    if (!pantryPopulatedRef.current && pantryItems.length > 0 && !ingredients.trim()) {
+      pantryPopulatedRef.current = true;
+      setIngredients(pantryItems.join(', '));
+    }
+  }, [pantryItems, ingredients, setIngredients]);
 
   const handleSearch = () => {
     performSearch(1, true);
@@ -89,7 +112,6 @@ const Home: React.FC = () => {
 
       if (error && typeof error === 'object' && 'name' in error && error.name === 'RecipeAPIError') {
         const apiError = error as unknown as { message: string; details?: { code?: string } };
-        // Use specific error messages from the API
         if (apiError.details && apiError.details.code === 'FILE_TOO_LARGE') {
           errorMsg = 'Image is too large. Please use an image under 4MB.';
         } else if (apiError.details && apiError.details.code === 'UNSUPPORTED_FORMAT') {
@@ -106,7 +128,6 @@ const Home: React.FC = () => {
       }
 
       setErrorMessage(errorMsg);
-      // Don't clear image on error — let user retry
     } finally {
       setIsDetectingIngredients(false);
     }
@@ -128,6 +149,43 @@ const Home: React.FC = () => {
     setSelectedRecipe(recipeWithDirections);
   };
 
+  const handleToggleSave = (recipe: Recipe) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (isSaved(recipe)) {
+      unsaveRecipe(recipe.title);
+    } else {
+      saveRecipe(recipe);
+    }
+  };
+
+  const handleSavePantry = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    const currentList = ingredients.split(',').map(i => i.trim()).filter(Boolean);
+    if (currentList.length > 0) {
+      addMultipleToPantry(currentList);
+    }
+  };
+
+  const handleUsePantryIngredient = (ingredient: string) => {
+    const current = ingredients.split(',').map(i => i.trim().toLowerCase()).filter(Boolean);
+    if (!current.includes(ingredient.toLowerCase())) {
+      const updated = ingredients.trim()
+        ? `${ingredients}, ${ingredient}`
+        : ingredient;
+      setIngredients(updated);
+    }
+  };
+
+  const handleUseAllPantry = () => {
+    setIngredients(pantryItems.join(', '));
+  };
+
   return (
     <>
       <Head>
@@ -142,8 +200,21 @@ const Home: React.FC = () => {
           onClose={() => setErrorMessage('')}
         />
 
-        {/* Hero */}
+        {/* Hero + Header */}
         <header className="hero fade-in">
+          <div className="hero-top-row">
+            <div />
+            <div className="hero-actions">
+              {!authLoading && (
+                <UserMenu
+                  user={user}
+                  onSignInClick={() => setShowAuthModal(true)}
+                  onSignOut={signOut}
+                />
+              )}
+              <ThemeSwitcher />
+            </div>
+          </div>
           <h1 className="hero-title">Ingreddit</h1>
           <p className="hero-tagline">Find recipes with what you have</p>
         </header>
@@ -185,6 +256,18 @@ const Home: React.FC = () => {
                 isLoading={isLoading}
                 isRateLimited={isRateLimited}
               />
+
+              {/* Pantry Bar */}
+              {user && (
+                <PantryBar
+                  pantryItems={pantryItems}
+                  onUseIngredient={handleUsePantryIngredient}
+                  onUseAll={handleUseAllPantry}
+                  onRemove={removeFromPantry}
+                  onSaveCurrent={handleSavePantry}
+                  currentIngredients={ingredients}
+                />
+              )}
             </>
           )}
         </div>
@@ -196,6 +279,8 @@ const Home: React.FC = () => {
             isLoading={isLoading}
             totalResults={totalResults}
             onRecipeClick={handleViewRecipe}
+            savedTitles={savedTitles}
+            onToggleSave={handleToggleSave}
           />
 
           {totalPages > 1 && (
@@ -213,8 +298,18 @@ const Home: React.FC = () => {
           <RecipeDetailView
             recipe={selectedRecipe}
             onClose={() => setSelectedRecipe(null)}
+            isSaved={isSaved(selectedRecipe)}
+            onToggleSave={handleToggleSave}
           />
         )}
+
+        {/* Auth Modal */}
+        <AuthModal
+          isOpen={showAuthModal}
+          onClose={() => setShowAuthModal(false)}
+          signInWithEmail={signInWithEmail}
+          signUpWithEmail={signUpWithEmail}
+        />
 
         {/* Footer */}
         <Footer />

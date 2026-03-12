@@ -60,6 +60,8 @@ export interface ErrorMessageProps {
 export interface RecipeDetailViewProps {
   recipe: Recipe;
   onClose: () => void;
+  isSaved?: boolean;
+  onToggleSave?: (recipe: Recipe) => void;
 }
 
 export interface ImageUploaderProps {
@@ -82,6 +84,8 @@ export interface RecipeListProps {
   isLoading: boolean;
   totalResults: number;
   onRecipeClick: (recipe: Recipe) => void;
+  savedTitles?: Set<string>;
+  onToggleSave?: (recipe: Recipe) => void;
 }
 
 export interface PaginationProps {
